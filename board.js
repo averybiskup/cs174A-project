@@ -7,24 +7,23 @@ const {
 class Board {
     /*
     Board class stores all the information about the current state of the game as well as implementation of searching algorithm 
-    width: integer value that stores the width of the maze 
-    height: integer value that stores the height of the maze
+    
     grid: 2D array that stores info for items on each 2x2 grid (naive implementation)
           for now, 'B' means breakable bricks (cube)
                    'W' means unbreakable walls (cube)
-                   'S' means starting points/plane (custume made plane)
+                   'S' means starting points/plane (custom made plane)
                    'E' means destiniation (ball)
                    ' ' means open space
                    in each grid there might be more fields added for searching algorithm. 
     */
     constructor(grid_width, grid_height, start_x, start_z, end_x, end_z){
-        this.grid_width = grid_width;
-        this.grid_height = grid_height;
-        this.start_x = start_x;
-        this.start_z = start_z;
-        this.end_x = end_x;
-        this.end_z = end_z;
-        this.grid = new Array();
+        this.grid_width = grid_width; //grid_width  
+        this.grid_height = grid_height; //grid_height 
+        this.start_x = start_x; //starting grid x coordinate 
+        this.start_z = start_z; //starting grid z coordinate 
+        this.end_x = end_x; //ending grid x coordinate 
+        this.end_z = end_z; //ending grid z coordinate 
+        this.grid = new Array(); //see above 
         this.init_grid();
     }
 
@@ -37,7 +36,7 @@ class Board {
         }
         this.grid[this.start_x][this.start_z] = 'S';
         this.grid[this.end_x][this.end_z] = 'E';
-        //randomly add walls and open space for tesing 
+        //randomly add walls and open space for testing 
         let count = 100;
         for(let i = 0; i < count; i++){
             let random_x = Math.floor(Math.random() * this.grid_width);
