@@ -4,6 +4,7 @@ const {
     Vector, Vector3, vec, vec3, vec4, color, hex_color, Matrix, Mat4, Light, Shape, Material, Scene,
 } = tiny;
 
+
 class Board {
     /*
     Board class stores all the information about the current state of the game as well as implementation of searching algorithm 
@@ -24,16 +25,88 @@ class Board {
         this.end_x = end_x; //ending grid x coordinate 
         this.end_z = end_z; //ending grid z coordinate 
         this.grid = new Array(); //see above 
+        this.grid2 = new Array(); //see above 
         this.init_grid();
     }
 
-    init_grid(){ //naive implementation
-        for(let i = 0; i < this.grid_width; i++){
+
+    between(value, min, max) {
+        return value >= min && value <= max;    
+    }
+
+    shuf(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array
+    }
+
+    carve_passage(cx, cy, grid) {
+
+        const opposite = {
+            E: "W",
+            S: "N",
+            W: "E",
+            N: "S"
+        }
+
+        const dx = {
+            E: 1,
+            W: -1,
+            N: 0,
+            S: 0
+        }
+
+        const dy = {
+            E: 0,
+            W: 0,
+            N: -1,
+            S: 1
+        }
+
+
+        let directions = this.shuf(['N', 'S', 'E', 'W']);
+
+        directions.map((dir) => {
+            let nx = cx + dx[dir];
+            let ny = cy + dy[dir];
+
+            //console.log(ny, grid[ny])
+            //console.log(ny, nx, this.between(ny, 0, grid.length-1), this.between(nx, 0, grid[ny].length - 1));
+            //
+            console.log(dir, nx, ny, this.between(ny, 0, grid.length-1) && this.between(nx, 0, grid[ny].length - 1));
+            
+            if (this.between(ny, 0, grid.length-1)
+                && this.between(nx, 0, grid[ny].length - 1)
+                && grid[ny][nx] == 0) {
+                console.log("TESTING");
+                
+                grid[cy][cx] = dir;
+                grid[ny][nx] = opposite[dir];
+                this.carve_passage(nx, ny);
+
+            }
+            
+        })
+        return grid;
+    }
+
+    init_grid() { //naive implementation
+
+        for (let i = 0; i < this.grid_height; i++) {
             this.grid[i] = new Array();
-            for(let j = 0; j < this.grid_height; j++){
-                this.grid[i][j] = 'B';
+            for (let j = 0; j < this.grid_width; j++) {
+                this.grid[i][j] = 0;
             }
         }
+
+        this.grid = this.carve_passage(0, 0, this.grid);
+
+        console.log(this.grid);
+        
+
+        /*
         this.grid[this.start_x][this.start_z] = 'S';
         this.grid[this.end_x][this.end_z] = 'E';
         //randomly add walls and open space for testing 
@@ -53,6 +126,7 @@ class Board {
                 this.grid[random_x][random_z] = ' ';
             }
         }
+        */
     }
     
     //implement search algorithm 
