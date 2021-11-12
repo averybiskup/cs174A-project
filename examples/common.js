@@ -155,6 +155,51 @@ const Cube = defs.Cube =
         }
     }
 
+const Player = defs.Player =
+    class Player extends Shape {
+        // **Cube** A closed 3D shape, and the first example of a compound shape (a Shape constructed
+        // out of other Shapes).  A cube inserts six Square strips into its own arrays, using six
+        // different matrices as offsets for each square.
+        constructor() {
+            super("position", "normal", "texture_coord");
+            this.arrays.position = Vector3.cast(
+                [0, -.5, -.5], [0, .5, -.5], [1, 0, -1],
+                [0, .5, -.5], [0, -.5, -.5], [-1, 0, -1],
+                [-1, 0, -1], [0, -.5, -.5], [0, 0, 1],
+                [0, -.5, -.5], [1, 0, -1], [0, 0, 1],
+                [1, 0, -1], [0, .5, -.5], [0, 0, 1],
+                [0, .5, -.5], [-1, 0, -1], [0, 0, 1]
+            );
+            let triangle_normals = 
+            this.arrays.normal = Vector3.cast(
+                this.triangle_normal([0, -.5, -.5], [0, .5, -.5], [1, 0, -1]), this.triangle_normal([0, -.5, -.5], [0, .5, -.5], [1, 0, -1]), this.triangle_normal([0, -.5, -.5], [0, .5, -.5], [1, 0, -1]),
+                this.triangle_normal([0, .5, -.5], [0, -.5, -.5], [-1, 0, -1]), this.triangle_normal([0, .5, -.5], [0, -.5, -.5], [-1, 0, -1]), this.triangle_normal([0, .5, -.5], [0, -.5, -.5], [-1, 0, -1]),
+                this.triangle_normal([-1, 0, -1], [0, -.5, -.5], [0, 0, 1]), this.triangle_normal([-1, 0, -1], [0, -.5, -.5], [0, 0, 1]), this.triangle_normal([-1, 0, -1], [0, -.5, -.5], [0, 0, 1]),
+                this.triangle_normal([0, -.5, -.5], [1, 0, -1], [0, 0, 1]), this.triangle_normal([0, -.5, -.5], [1, 0, -1], [0, 0, 1]), this.triangle_normal([0, -.5, -.5], [1, 0, -1], [0, 0, 1]),
+                this.triangle_normal([1, 0, -1], [0, .5, -.5], [0, 0, 1]), this.triangle_normal([1, 0, -1], [0, .5, -.5], [0, 0, 1]), this.triangle_normal([1, 0, -1], [0, .5, -.5], [0, 0, 1]),
+                this.triangle_normal([0, .5, -.5], [-1, 0, -1], [0, 0, 1]), this.triangle_normal([0, .5, -.5], [-1, 0, -1], [0, 0, 1]), this.triangle_normal([0, .5, -.5], [-1, 0, -1], [0, 0, 1]),
+            );
+            // Arrange the vertices into a square shape in texture space too:
+            this.indices.push(
+                0, 1, 2,
+                3, 4, 5,
+                6, 7, 8,
+                9, 10, 11,
+                12, 13, 14,
+                15, 16, 17
+            );
+
+        }
+
+        triangle_normal(a, b, c)
+        {
+            let u = vec3(c[0], c[1], c[2]).minus(vec3(b[0], b[1], b[2]));
+            let v = vec3(a[0], a[1], a[2]).minus(vec3(b[0], b[1], b[2]));
+
+            return u.cross(v);
+        }
+    }
+
 
 const Subdivision_Sphere = defs.Subdivision_Sphere =
     class Subdivision_Sphere extends Shape {
