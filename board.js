@@ -36,7 +36,11 @@ class Board {
                    'E' means destiniation (ball)
                    ' ' means open space
                    in each grid there might be more fields added for searching algorithm. 
+
+    Maze generation: Recursive Backtracking
+    Based on: http://weblog.jamisbuck.org/2010/12/27/maze-generation-recursive-backtracking
     */
+
     constructor(grid_width, grid_height, start_x, start_z, end_x, end_z){
         this.grid_width = grid_width; //grid_width  
         this.grid_height = grid_height; //grid_height 
@@ -45,18 +49,18 @@ class Board {
         this.end_x = end_x; //ending grid x coordinate 
         this.end_z = end_z; //ending grid z coordinate 
         this.grid = new Array(); //see above 
-        this.horizontal_walls = new Array();
-        this.vertical_walls = new Array();
         this.cell_array = new Array();
         this.final_grid = new Array();
         this.init_grid();
     }
 
 
+    // method for checking if value is between min and max
     between(value, min, max) {
         return value >= min && value <= max;    
     }
 
+    // method for randomly shuffling an array
     shuf(array) {
         for (let i = array.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
@@ -91,14 +95,18 @@ class Board {
 
         let directions = this.shuf(['N', 'S', 'E', 'W']);
 
+        // Check each direction, and carve path in said direction
         directions.map((direction) => {
             let nx = cx + dx[direction];
             let ny = cy + dy[direction];
 
+            // Make sure this direction hasn't been visited, and it's
+            // on the board
             if (this.between(ny, 0, this.grid.length-1)
                 && this.between(nx, 0, this.grid[ny].length - 1)
                 && this.grid[ny][nx] == 0) {
                 
+                // Store direction to create maze
                 this.cell_array[cy][cx][direction] = true;
 
                 this.grid[cy][cx] = direction;
@@ -112,6 +120,7 @@ class Board {
 
     init_grid() { //naive implementation
 
+        // Initialize grid, and cell_array for maze
         for (let i = 0; i < this.grid_height; i++) {
             this.grid[i] = new Array();
             this.cell_array[i] = new Array();
@@ -123,6 +132,7 @@ class Board {
 
         this.carve_passage(0, 0);
 
+        // Initialize the final grid (2d array of wall/empty space)
         for (let i = 0; i < this.grid_height*2; i++) {
             this.final_grid[i] = new Array();
             for (let j = 0; j < this.grid_width*2; j++) {
@@ -130,6 +140,8 @@ class Board {
             }
         }
 
+
+        // Turning cell_array into a 2d array of wall/empty space)
         for (let i = 0; i < this.cell_array.length; i++) {
             for (let j = 0; j < this.cell_array[0].length; j++) {
 
@@ -148,26 +160,33 @@ class Board {
                 try { left_cell = this.cell_array[i][j-1].E } catch {}
                 try { right_cell = this.cell_array[i][j+1].W } catch {}
 
+                // Checking for wall between N of current cell, and S of 
+                // cell above current cell
                 if (cur_cell.N || up_cell && final_grid_y > 0) {
                     this.final_grid[final_grid_y - 1][final_grid_x].iswall = false;
                     this.final_grid[final_grid_y][final_grid_x].iswall = false;
                 }
 
+                // Checking for wall between S of current cell, and N of 
+                // cell above current cell
                 if (cur_cell.S || down_cell && final_grid_y < this.grid_height) {
                     this.final_grid[final_grid_y + 1][final_grid_x].iswall = false;
                     this.final_grid[final_grid_y][final_grid_x].iswall = false;
                 }
 
+                // Checking for wall between E of current cell, and W of 
+                // cell above current cell
                 if (cur_cell.E || right_cell && final_grid_x < this.grid_width) {
                     this.final_grid[final_grid_y][final_grid_x + 1].iswall = false;
                     this.final_grid[final_grid_y][final_grid_x].iswall = false;
                 }
 
+                // Checking for wall between W of current cell, and E of 
+                // cell above current cell
                 if (cur_cell.W || left_cell && final_grid_x > 0) {
                     this.final_grid[final_grid_y][final_grid_x - 1].iswall = false;
                     this.final_grid[final_grid_y][final_grid_x].iswall = false;
                 }
-
                 
             }
         }
