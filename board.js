@@ -4,6 +4,27 @@ const {
     Vector, Vector3, vec, vec3, vec4, color, hex_color, Matrix, Mat4, Light, Shape, Material, Scene,
 } = tiny;
 
+
+class Cell {
+    constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        this.N = false;
+        this.S = false;
+        this.E = false;
+        this.W = false;
+    }
+}
+
+class FinalCell {
+    constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        this.iswall = true;
+    }
+    
+}
+
 class Board {
     /*
     Board class stores all the information about the current state of the game as well as implementation of searching algorithm 
@@ -24,35 +45,133 @@ class Board {
         this.end_x = end_x; //ending grid x coordinate 
         this.end_z = end_z; //ending grid z coordinate 
         this.grid = new Array(); //see above 
+        this.horizontal_walls = new Array();
+        this.vertical_walls = new Array();
+        this.cell_array = new Array();
+        this.final_grid = new Array();
         this.init_grid();
     }
 
-    init_grid(){ //naive implementation
-        for(let i = 0; i < this.grid_width; i++){
+
+    between(value, min, max) {
+        return value >= min && value <= max;    
+    }
+
+    shuf(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array
+    }
+
+    carve_passage(cx, cy, grid) {
+
+        const opposite = {
+            E: "W",
+            S: "N",
+            W: "E",
+            N: "S"
+        }
+
+        const dx = {
+            E: 1,
+            W: -1,
+            N: 0,
+            S: 0
+        }
+
+        const dy = {
+            E: 0,
+            W: 0,
+            N: -1,
+            S: 1
+        }
+
+
+        let directions = this.shuf(['N', 'S', 'E', 'W']);
+
+        directions.map((direction) => {
+            let nx = cx + dx[direction];
+            let ny = cy + dy[direction];
+
+            if (this.between(ny, 0, this.grid.length-1)
+                && this.between(nx, 0, this.grid[ny].length - 1)
+                && this.grid[ny][nx] == 0) {
+                
+                this.cell_array[cy][cx][direction] = true;
+
+                this.grid[cy][cx] = direction;
+                this.grid[ny][nx] = opposite[direction];
+                this.carve_passage(nx, ny);
+
+            }
+            
+        })
+    }
+
+    init_grid() { //naive implementation
+
+        for (let i = 0; i < this.grid_height; i++) {
             this.grid[i] = new Array();
-            for(let j = 0; j < this.grid_height; j++){
-                this.grid[i][j] = 'B';
+            this.cell_array[i] = new Array();
+            for (let j = 0; j < this.grid_width; j++) {
+                this.cell_array[i][j] = new Cell(j, i);
+                this.grid[i][j] = 0;
             }
         }
-        this.grid[this.start_x][this.start_z] = 'S';
-        this.grid[this.end_x][this.end_z] = 'E';
-        //randomly add walls and open space for testing 
-        let count = 100;
-        for(let i = 0; i < count; i++){
-            let random_x = Math.floor(Math.random() * this.grid_width);
-            let random_z = Math.floor(Math.random() * this.grid_height);
-            if((random_x != this.start_x || random_z != this.start_z) && (random_x != this.end_x || random_z != this.end_z)){
-                this.grid[random_x][random_z] = 'W';
+
+        this.carve_passage(0, 0);
+
+        for (let i = 0; i < this.grid_height*2; i++) {
+            this.final_grid[i] = new Array();
+            for (let j = 0; j < this.grid_width*2; j++) {
+                this.final_grid[i][j] = new FinalCell(j, i);
             }
         }
-        count = 40;
-        for(let i = 0; i < count; i++){
-            let random_x = Math.floor(Math.random() * (this.grid_width - 1));
-            let random_z = Math.floor(Math.random() * (this.grid_height - 1));
-            if((random_x != this.start_x || random_z != this.start_z) && (random_x != this.end_x || random_z != this.end_z)){
-                this.grid[random_x][random_z] = ' ';
+
+        for (let i = 0; i < this.cell_array.length; i++) {
+            for (let j = 0; j < this.cell_array[0].length; j++) {
+
+                let cur_cell = this.cell_array[i][j];
+
+                let final_grid_y = i * 2
+                let final_grid_x = j * 2
+
+                let up_cell = true;
+                let down_cell = true;
+                let right_cell = true;
+                let left_cell = true;
+
+                try { up_cell = this.cell_array[i-1][j].S } catch {}
+                try { down_cell = this.cell_array[i+1][j].N } catch {}
+                try { left_cell = this.cell_array[i][j-1].E } catch {}
+                try { right_cell = this.cell_array[i][j+1].W } catch {}
+
+                if (cur_cell.N || up_cell && final_grid_y > 0) {
+                    this.final_grid[final_grid_y - 1][final_grid_x].iswall = false;
+                    this.final_grid[final_grid_y][final_grid_x].iswall = false;
+                }
+
+                if (cur_cell.S || down_cell && final_grid_y < this.grid_height) {
+                    this.final_grid[final_grid_y + 1][final_grid_x].iswall = false;
+                    this.final_grid[final_grid_y][final_grid_x].iswall = false;
+                }
+
+                if (cur_cell.E || right_cell && final_grid_x < this.grid_width) {
+                    this.final_grid[final_grid_y][final_grid_x + 1].iswall = false;
+                    this.final_grid[final_grid_y][final_grid_x].iswall = false;
+                }
+
+                if (cur_cell.W || left_cell && final_grid_x > 0) {
+                    this.final_grid[final_grid_y][final_grid_x - 1].iswall = false;
+                    this.final_grid[final_grid_y][final_grid_x].iswall = false;
+                }
+
+                
             }
         }
+
     }
     
     //implement search algorithm 
