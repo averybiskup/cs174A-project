@@ -21,6 +21,7 @@ class FinalCell {
         this.x = x;
         this.y = y;
         this.iswall = true;
+        this.isPlayer = false;
     }
     
 }

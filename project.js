@@ -60,16 +60,16 @@ class Base_Scene extends Scene {
         let model_transform = Mat4.identity();
         model_transform = model_transform.times(Mat4.scale(1.0, 1.0, height/2))
                                          .times(Mat4.translation(-1.0, 1.0, 1.0))
-        this.shapes.boarder.draw(context, program_state, model_transform, this.materials.grey_plastic);
+        this.shapes.boarder.draw(context, program_state, model_transform, this.materials.white_plastic);
         model_transform = model_transform.times(Mat4.translation(width+2, 0, 0));
-        this.shapes.boarder.draw(context, program_state, model_transform, this.materials.grey_plastic);
+        this.shapes.boarder.draw(context, program_state, model_transform, this.materials.white_plastic);
         model_transform = Mat4.identity();
         model_transform = model_transform.times(Mat4.translation(-2.0, 0, 0))
                                          .times(Mat4.scale(width/2+2, 1.0, 1.0))
                                          .times(Mat4.translation(1.0, 1.0, -1.0));
-        this.shapes.boarder.draw(context, program_state, model_transform, this.materials.grey_plastic);
+        this.shapes.boarder.draw(context, program_state, model_transform, this.materials.white_plastic);
         model_transform = model_transform.times(Mat4.translation(0, 0, height+2));
-        this.shapes.boarder.draw(context, program_state, model_transform, this.materials.grey_plastic);
+        this.shapes.boarder.draw(context, program_state, model_transform, this.materials.white_plastic);
     }
 
     display(context, program_state) {
@@ -151,7 +151,7 @@ export class Project extends Base_Scene {
                 
                 if (maze[i][j].iswall) {
                     model_transform = this.get_model_transform_from_grid(j, i, 'W');
-                    this.shapes.cube.draw(context, program_state, model_transform, this.materials.red_plastic);
+                    this.shapes.cube.draw(context, program_state, model_transform, this.materials.grey_plastic);
                 } else {
                     //model_transform = this.get_model_transform_from_grid(j, i, ' ');
                     //this.shapes.cube.draw(context, program_state, model_transform, this.materials.green_plastic);
@@ -159,7 +159,7 @@ export class Project extends Base_Scene {
                     if (player_spawned == false)
                     {
                         model_transform = this.get_model_transform_from_grid(j, i, ' ');
-                        this.shapes.player.draw(context, program_state, model_transform, this.materials.green_plastic);
+                        this.shapes.player.draw(context, program_state, model_transform, this.materials.plane);
                         player_spawned = true;
                     }
                 }
