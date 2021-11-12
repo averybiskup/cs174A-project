@@ -20,6 +20,7 @@ class Base_Scene extends Scene {
             cube: new defs.Cube(),
             sphere:  new defs.Subdivision_Sphere(4),
             plane: new defs.Cube(), //place holder for plane 
+            player: new defs.Player(),
         }
         // *** Materials
         this.materials = { //all materials are place holder for demo
@@ -32,7 +33,7 @@ class Base_Scene extends Scene {
             green_plastic: new Material(new defs.Phong_Shader(),
                 {ambient:.6, diffusivity: .6, color: hex_color('#00ff00')}),
             red_plastic: new Material(new defs.Phong_Shader(),
-                {ambient:.6, diffusivity: .6, color: hex_color('#ff0000')}),
+                {ambient:1, diffusivity: 1, color: hex_color('#ff0000')}),
             plane: new Material(new defs.Phong_Shader(), 
                 {ambient: .8, diffusivity: .6, color: hex_color('#ff9c8c')}),
         };
@@ -59,16 +60,16 @@ class Base_Scene extends Scene {
         let model_transform = Mat4.identity();
         model_transform = model_transform.times(Mat4.scale(1.0, 1.0, height/2))
                                          .times(Mat4.translation(-1.0, 1.0, 1.0))
-        this.shapes.boarder.draw(context, program_state, model_transform, this.materials.white_plastic);
+        this.shapes.boarder.draw(context, program_state, model_transform, this.materials.grey_plastic);
         model_transform = model_transform.times(Mat4.translation(width+2, 0, 0));
-        this.shapes.boarder.draw(context, program_state, model_transform, this.materials.white_plastic);
+        this.shapes.boarder.draw(context, program_state, model_transform, this.materials.grey_plastic);
         model_transform = Mat4.identity();
         model_transform = model_transform.times(Mat4.translation(-2.0, 0, 0))
                                          .times(Mat4.scale(width/2+2, 1.0, 1.0))
                                          .times(Mat4.translation(1.0, 1.0, -1.0));
-        this.shapes.boarder.draw(context, program_state, model_transform, this.materials.white_plastic);
+        this.shapes.boarder.draw(context, program_state, model_transform, this.materials.grey_plastic);
         model_transform = model_transform.times(Mat4.translation(0, 0, height+2));
-        this.shapes.boarder.draw(context, program_state, model_transform, this.materials.white_plastic);
+        this.shapes.boarder.draw(context, program_state, model_transform, this.materials.grey_plastic);
     }
 
     display(context, program_state) {
@@ -139,6 +140,7 @@ export class Project extends Base_Scene {
         super.display(context, program_state);
         //draw the maze contents according to board(see definition in board.js) (needs to be replaced later)
         //let t = program_state.animation_time / 1000;
+        let player_spawned = false;
 
         for(let i = 0; i < this.board.final_grid.length; i++){
             for(let j = 0; j < this.board.final_grid[0].length; j++){
@@ -151,11 +153,16 @@ export class Project extends Base_Scene {
                     model_transform = this.get_model_transform_from_grid(j, i, 'W');
                     this.shapes.cube.draw(context, program_state, model_transform, this.materials.red_plastic);
                 } else {
-                    model_transform = this.get_model_transform_from_grid(j, i, ' ');
-                    this.shapes.cube.draw(context, program_state, model_transform, this.materials.green_plastic);
-                    
+                    //model_transform = this.get_model_transform_from_grid(j, i, ' ');
+                    //this.shapes.cube.draw(context, program_state, model_transform, this.materials.green_plastic);
+
+                    if (player_spawned == false)
+                    {
+                        model_transform = this.get_model_transform_from_grid(j, i, ' ');
+                        this.shapes.player.draw(context, program_state, model_transform, this.materials.green_plastic);
+                        player_spawned = true;
+                    }
                 }
-            
             }
         }
     }
