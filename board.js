@@ -14,6 +14,14 @@ class Cell {
         this.E = false;
         this.W = false;
     }
+}
+
+class FinalCell {
+    constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        this.iswall = true;
+    }
     
 }
 
@@ -40,6 +48,7 @@ class Board {
         this.horizontal_walls = new Array();
         this.vertical_walls = new Array();
         this.cell_array = new Array();
+        this.final_grid = new Array();
         this.init_grid();
     }
 
@@ -114,6 +123,54 @@ class Board {
 
         this.carve_passage(0, 0);
 
+        for (let i = 0; i < this.grid_height*2; i++) {
+            this.final_grid[i] = new Array();
+            for (let j = 0; j < this.grid_width*2; j++) {
+                this.final_grid[i][j] = new FinalCell(j, i);
+            }
+        }
+
+        for (let i = 0; i < this.cell_array.length; i++) {
+            for (let j = 0; j < this.cell_array[0].length; j++) {
+
+                let cur_cell = this.cell_array[i][j];
+
+                let final_grid_y = i * 2
+                let final_grid_x = j * 2
+
+                let up_cell = true;
+                let down_cell = true;
+                let right_cell = true;
+                let left_cell = true;
+
+                try { up_cell = this.cell_array[i-1][j].S } catch {}
+                try { down_cell = this.cell_array[i+1][j].N } catch {}
+                try { left_cell = this.cell_array[i][j-1].E } catch {}
+                try { right_cell = this.cell_array[i][j+1].W } catch {}
+
+                if (cur_cell.N || up_cell && final_grid_y > 0) {
+                    this.final_grid[final_grid_y - 1][final_grid_x].iswall = false;
+                    this.final_grid[final_grid_y][final_grid_x].iswall = false;
+                }
+
+                if (cur_cell.S || down_cell && final_grid_y < this.grid_height) {
+                    this.final_grid[final_grid_y + 1][final_grid_x].iswall = false;
+                    this.final_grid[final_grid_y][final_grid_x].iswall = false;
+                }
+
+                if (cur_cell.E || right_cell && final_grid_x < this.grid_width) {
+                    this.final_grid[final_grid_y][final_grid_x + 1].iswall = false;
+                    this.final_grid[final_grid_y][final_grid_x].iswall = false;
+                }
+
+                if (cur_cell.W || left_cell && final_grid_x > 0) {
+                    this.final_grid[final_grid_y][final_grid_x - 1].iswall = false;
+                    this.final_grid[final_grid_y][final_grid_x].iswall = false;
+                }
+
+                
+            }
+        }
 
     }
     

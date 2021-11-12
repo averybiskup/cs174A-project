@@ -37,8 +37,8 @@ class Base_Scene extends Scene {
                 {ambient: .8, diffusivity: .6, color: hex_color('#ff9c8c')}),
         };
 
-        this.board_width = 40;
-        this.board_height = 30;
+        this.board_width = 21;
+        this.board_height = 21;
         // The white material and basic shader are used for drawing the outline.
         this.white = new Material(new defs.Basic_Shader());
     }
@@ -88,7 +88,7 @@ class Base_Scene extends Scene {
         const light_position = vec4(10, 10, 10, 1);
         program_state.lights = [new Light(light_position, color(1, 1, 1, 1), 1000)];
         this.draw_maze_ground(context, program_state);
-        this.draw_maze_boarder(context, program_state, this.board_width, this.board_height); //draw a 40 x 30 area on x-z plane
+        this.draw_maze_boarder(context, program_state, this.board_width*2, this.board_height*2); //draw a 40 x 30 area on x-z plane
     }
 }
 export class Project extends Base_Scene {
@@ -119,29 +119,18 @@ export class Project extends Base_Scene {
         this.key_triggered_button("Test", ["c"], () => console.log('test'));
     }
 
-    get_model_transform_from_grid(i, j, direction){ //helper function for transforming unit cube or sphere from model to world space
+    get_model_transform_from_grid(i, j, obj){ //helper function for transforming unit cube or sphere from model to world space
         let model_transform = Mat4.identity();
 
-        switch(direction) {
-            case 'N':
-                model_transform = model_transform.times(Mat4.translation(i*2 + 1, 1, j*2))
-                                                            .times(Mat4.scale(0.8, 0.8, 0.1));
-                break;
-            case 'W':
-                model_transform = model_transform.times(Mat4.translation(i*2, 1, j*2 + 1))
-                                                            .times(Mat4.scale(0.1, 0.8, 0.8));
-                break;
-            case 'S':
-                model_transform = model_transform.times(Mat4.translation(i*2 + 1, 1, j*2 + 2))
-                                                            .times(Mat4.scale(0.8, 0.8, 0.1));
-                break;
-            case 'E':
-                model_transform = model_transform.times(Mat4.translation(i*2 + 2, 1, j*2 + 1))
-                                                            .times(Mat4.scale(0.1, 0.8, 0.8));
-                break;
-                
-        }
-            
+        const translation_factor = 2;
+        const x_translation = i * translation_factor;
+        const y_translation = j * translation_factor;
+
+        const cube_size = 0.8;
+
+        model_transform = model_transform.times(Mat4.translation(x_translation + 1, 1, y_translation + 1))
+                                                .times(Mat4.scale(cube_size, cube_size, cube_size));
+
 
         return model_transform;
     }
@@ -151,44 +140,20 @@ export class Project extends Base_Scene {
         //draw the maze contents according to board(see definition in board.js) (needs to be replaced later)
         //let t = program_state.animation_time / 1000;
 
-
-        for(let i = 0; i < this.board.cell_array.length; i++){
-            for(let j = 0; j < this.board.cell_array[0].length; j++){
+        for(let i = 0; i < this.board.final_grid.length; i++){
+            for(let j = 0; j < this.board.final_grid[0].length; j++){
                 let model_transform
 
-                let cur_cell = this.board.cell_array[i][j];
+                let maze = this.board.final_grid;
 
-
-                let up_cell = true;
-                let down_cell = true;
-                let right_cell = true;
-                let left_cell = true;
-
-                try { up_cell = this.board.cell_array[i - 1][j].S; } catch {}
-                try { down_cell = this.board.cell_array[i + 1][j].N; } catch {}
-                try { left_cell = this.board.cell_array[i][j - 1].E; } catch {}
-                try { right_cell = this.board.cell_array[i][j + 1].W; } catch {}
-
-
-
-                if (!(cur_cell.N || up_cell)) {
-                    model_transform = this.get_model_transform_from_grid(j, i, 'N');
-                    this.shapes.cube.draw(context, program_state, model_transform, this.materials.red_plastic);
-                }
-
-                if (!(cur_cell.S || down_cell)) {
-                    model_transform = this.get_model_transform_from_grid(j, i, 'S');
-                    this.shapes.cube.draw(context, program_state, model_transform, this.materials.green_plastic);
-                }
-
-                if (!(cur_cell.W || left_cell)) {
+                
+                if (maze[i][j].iswall) {
                     model_transform = this.get_model_transform_from_grid(j, i, 'W');
-                    this.shapes.cube.draw(context, program_state, model_transform, this.materials.white_plastic);
-                }
-
-                if (!(cur_cell.E || right_cell)) {
-                    model_transform = this.get_model_transform_from_grid(j, i, 'E');
-                    this.shapes.cube.draw(context, program_state, model_transform, this.materials.grey_plastic);
+                    this.shapes.cube.draw(context, program_state, model_transform, this.materials.red_plastic);
+                } else {
+                    model_transform = this.get_model_transform_from_grid(j, i, ' ');
+                    this.shapes.cube.draw(context, program_state, model_transform, this.materials.green_plastic);
+                    
                 }
             
             }
