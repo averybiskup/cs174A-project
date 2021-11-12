@@ -5,6 +5,18 @@ const {
 } = tiny;
 
 
+class Cell {
+    constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        this.N = false;
+        this.S = false;
+        this.E = false;
+        this.W = false;
+    }
+    
+}
+
 class Board {
     /*
     Board class stores all the information about the current state of the game as well as implementation of searching algorithm 
@@ -25,7 +37,9 @@ class Board {
         this.end_x = end_x; //ending grid x coordinate 
         this.end_z = end_z; //ending grid z coordinate 
         this.grid = new Array(); //see above 
-        this.grid2 = new Array(); //see above 
+        this.horizontal_walls = new Array();
+        this.vertical_walls = new Array();
+        this.cell_array = new Array();
         this.init_grid();
     }
 
@@ -68,65 +82,39 @@ class Board {
 
         let directions = this.shuf(['N', 'S', 'E', 'W']);
 
-        directions.map((dir) => {
-            let nx = cx + dx[dir];
-            let ny = cy + dy[dir];
+        directions.map((direction) => {
+            let nx = cx + dx[direction];
+            let ny = cy + dy[direction];
 
-            //console.log(ny, grid[ny])
-            //console.log(ny, nx, this.between(ny, 0, grid.length-1), this.between(nx, 0, grid[ny].length - 1));
-            //
-            console.log(dir, nx, ny, this.between(ny, 0, grid.length-1) && this.between(nx, 0, grid[ny].length - 1));
-            
-            if (this.between(ny, 0, grid.length-1)
-                && this.between(nx, 0, grid[ny].length - 1)
-                && grid[ny][nx] == 0) {
-                console.log("TESTING");
+            if (this.between(ny, 0, this.grid.length-1)
+                && this.between(nx, 0, this.grid[ny].length - 1)
+                && this.grid[ny][nx] == 0) {
                 
-                grid[cy][cx] = dir;
-                grid[ny][nx] = opposite[dir];
+                this.cell_array[cy][cx][direction] = true;
+
+                this.grid[cy][cx] = direction;
+                this.grid[ny][nx] = opposite[direction];
                 this.carve_passage(nx, ny);
 
             }
             
         })
-        return grid;
     }
 
     init_grid() { //naive implementation
 
         for (let i = 0; i < this.grid_height; i++) {
             this.grid[i] = new Array();
+            this.cell_array[i] = new Array();
             for (let j = 0; j < this.grid_width; j++) {
+                this.cell_array[i][j] = new Cell(j, i);
                 this.grid[i][j] = 0;
             }
         }
 
-        this.grid = this.carve_passage(0, 0, this.grid);
+        this.carve_passage(0, 0);
 
-        console.log(this.grid);
-        
 
-        /*
-        this.grid[this.start_x][this.start_z] = 'S';
-        this.grid[this.end_x][this.end_z] = 'E';
-        //randomly add walls and open space for testing 
-        let count = 100;
-        for(let i = 0; i < count; i++){
-            let random_x = Math.floor(Math.random() * this.grid_width);
-            let random_z = Math.floor(Math.random() * this.grid_height);
-            if((random_x != this.start_x || random_z != this.start_z) && (random_x != this.end_x || random_z != this.end_z)){
-                this.grid[random_x][random_z] = 'W';
-            }
-        }
-        count = 40;
-        for(let i = 0; i < count; i++){
-            let random_x = Math.floor(Math.random() * (this.grid_width - 1));
-            let random_z = Math.floor(Math.random() * (this.grid_height - 1));
-            if((random_x != this.start_x || random_z != this.start_z) && (random_x != this.end_x || random_z != this.end_z)){
-                this.grid[random_x][random_z] = ' ';
-            }
-        }
-        */
     }
     
     //implement search algorithm 
