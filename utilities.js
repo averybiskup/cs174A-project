@@ -14,8 +14,8 @@ function get_model_transform_from_grid(i, j){ //helper function for transforming
     let model_transform = Mat4.identity();
 
     const translation_factor = 2;
-    const x_translation = i * translation_factor;
-    const z_translation = j * translation_factor;
+    const z_translation = i * translation_factor;
+    const x_translation = j * translation_factor;
 
     const cube_size = 0.8;
 

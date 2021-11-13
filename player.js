@@ -9,7 +9,7 @@ const {
  class Player {
     constructor(player_x, player_z, current_model_transform){
         this.grid_x = player_x; //grid x-coord of player 
-        this.grid_z = player_z; //grid y-coord of player 
+        this.grid_z = player_z; //grid z-coord of player 
         this.point_to = 0; //direction the player points to relative to South default 0 rad  
         this.model_transform = current_model_transform; //holds current model_transform of player for mixing later on
     }

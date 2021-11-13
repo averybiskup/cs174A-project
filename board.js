@@ -206,10 +206,10 @@ class Board {
          while(!isPlayerPlaced){
             let start_x = rand_int(0, this.grid_width);
             let start_z = rand_int(0, this.grid_height);
-            if(!this.final_grid[start_x][start_z].iswall && !this.final_grid[start_x][start_z].isEnd){
+            if(!this.final_grid[start_z][start_x].iswall && !this.final_grid[start_z][start_x].isEnd){
                this.start_x = start_x;
                this.start_z = start_z;
-               this.final_grid[start_x][start_z].isPlayer = true;
+               this.final_grid[start_z][start_x].isPlayer = true;
                this.player = new Player(start_x, start_z, get_model_transform_from_grid(start_x, start_z));
                isPlayerPlaced = true;
             }
@@ -221,10 +221,10 @@ class Board {
         while(!isEndPlaced){
             let end_x = rand_int(0, this.grid_width);
             let end_z = rand_int(0, this.grid_height);
-            if(!this.final_grid[end_x][end_z].iswall && !this.final_grid[end_x][end_z].isPlayer){
+            if(!this.final_grid[end_z][end_x].iswall && !this.final_grid[end_z][end_x].isPlayer){
                 this.end_x = end_x;
                 this.end_z = end_z;
-                this.final_grid[end_x][end_z].isEnd = true;
+                this.final_grid[end_z][end_x].isEnd = true;
                 isEndPlaced = true;
             }
         }
