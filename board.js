@@ -1,4 +1,6 @@
 import {defs, tiny} from './examples/common.js';
+import {Player} from './player.js';
+import {rand_int, get_model_transform_from_grid} from './utilities.js';
 
 const {
     Vector, Vector3, vec, vec3, vec4, color, hex_color, Matrix, Mat4, Light, Shape, Material, Scene,
@@ -21,6 +23,7 @@ class FinalCell {
         this.x = x;
         this.y = y;
         this.iswall = true;
+        this.isEnd = false;
         this.isPlayer = false;
     }
     
@@ -42,17 +45,20 @@ class Board {
     Based on: http://weblog.jamisbuck.org/2010/12/27/maze-generation-recursive-backtracking
     */
 
-    constructor(grid_width, grid_height, start_x, start_z, end_x, end_z){
+    constructor(grid_width, grid_height){
         this.grid_width = grid_width; //grid_width  
         this.grid_height = grid_height; //grid_height 
-        this.start_x = start_x; //starting grid x coordinate 
-        this.start_z = start_z; //starting grid z coordinate 
-        this.end_x = end_x; //ending grid x coordinate 
-        this.end_z = end_z; //ending grid z coordinate 
+        this.start_x = 0;; //starting grid x coordinate 
+        this.start_z = 0; //starting grid z coordinate 
+        this.end_x = 0; //ending grid x coordinate 
+        this.end_z = 0; //ending grid z coordinate
+        this.player; //player of the board   
         this.grid = new Array(); //see above 
         this.cell_array = new Array();
         this.final_grid = new Array();
         this.init_grid();
+        this.init_player();
+        this.init_end();
     }
 
 
@@ -193,7 +199,37 @@ class Board {
         }
 
     }
-    
+
+    init_player(){
+         //randomly place player 
+         let isPlayerPlaced = false;
+         while(!isPlayerPlaced){
+            let start_x = rand_int(0, this.grid_width);
+            let start_z = rand_int(0, this.grid_height);
+            if(!this.final_grid[start_x][start_z].iswall && !this.final_grid[start_x][start_z].isEnd){
+               this.start_x = start_x;
+               this.start_z = start_z;
+               this.final_grid[start_x][start_z].isPlayer = true;
+               this.player = new Player(start_x, start_z, get_model_transform_from_grid(start_x, start_z));
+               isPlayerPlaced = true;
+            }
+        }
+    }
+
+    init_end(){
+        let isEndPlaced = false;
+        while(!isEndPlaced){
+            let end_x = rand_int(0, this.grid_width);
+            let end_z = rand_int(0, this.grid_height);
+            if(!this.final_grid[end_x][end_z].iswall && !this.final_grid[end_x][end_z].isPlayer){
+                this.end_x = end_x;
+                this.end_z = end_z;
+                this.final_grid[end_x][end_z].isEnd = true;
+                isEndPlaced = true;
+            }
+        }
+    }
+
     //implement search algorithm 
     dfs(){}
     bfs(){}

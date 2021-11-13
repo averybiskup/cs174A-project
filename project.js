@@ -1,5 +1,6 @@
 import {defs, tiny} from './examples/common.js';
 import {Board} from './board.js';
+import { get_model_transform_from_grid } from './utilities.js';
 
 const {
     Vector, Vector3, vec, vec3, vec4, color, hex_color, Matrix, Mat4, Light, Shape, Material, Scene,
@@ -44,10 +45,6 @@ class Base_Scene extends Scene {
         this.white = new Material(new defs.Basic_Shader());
     }
 
-    // Method for returning random number between range (min, max)
-    rand_int(min, max) {
-        return Math.floor(Math.random() * (max - min) + min);
-    }
 
     draw_maze_ground(context, program_state){ //on x-z plane
         let model_transform = Mat4.identity();
@@ -106,11 +103,7 @@ export class Project extends Base_Scene {
         // Generate a maze with size [board_width/2 x board_height/2]
         // Randomly place start and end point
         this.board = new Board(this.board_width/2, 
-                               this.board_height/2, 
-                               this.rand_int(0, this.board_width/2),
-                               this.rand_int(0, this.board_height/2),
-                               this.rand_int(0, this.board_width/2),
-                               this.rand_int(0, this.board_height/2));
+                               this.board_height/2);
 
     }
 
@@ -120,50 +113,26 @@ export class Project extends Base_Scene {
         this.key_triggered_button("Test", ["c"], () => console.log('test'));
     }
 
-    get_model_transform_from_grid(i, j, obj){ //helper function for transforming unit cube or sphere from model to world space
-        let model_transform = Mat4.identity();
-
-        const translation_factor = 2;
-        const x_translation = i * translation_factor;
-        const y_translation = j * translation_factor;
-
-        const cube_size = 0.8;
-
-        model_transform = model_transform.times(Mat4.translation(x_translation + 1, 1, y_translation + 1))
-                                                .times(Mat4.scale(cube_size, cube_size, cube_size));
-
-
-        return model_transform;
-    }
-
     display(context, program_state) {
         super.display(context, program_state);
         //draw the maze contents according to board(see definition in board.js) (needs to be replaced later)
-        //let t = program_state.animation_time / 1000;
-        let player_spawned = false;
-
+        let t = program_state.animation_time / 1000;
+        
+        //draw maze 
         for(let i = 0; i < this.board.final_grid.length; i++){
             for(let j = 0; j < this.board.final_grid[0].length; j++){
                 let model_transform
-
                 let maze = this.board.final_grid;
-
-                
-                if (maze[i][j].iswall) {
-                    model_transform = this.get_model_transform_from_grid(j, i, 'W');
+                if (maze[i][j].iswall) { //draw wall
+                    model_transform = get_model_transform_from_grid(i, j);
                     this.shapes.cube.draw(context, program_state, model_transform, this.materials.grey_plastic);
-                } else {
-                    //model_transform = this.get_model_transform_from_grid(j, i, ' ');
-                    //this.shapes.cube.draw(context, program_state, model_transform, this.materials.green_plastic);
-
-                    if (player_spawned == false)
-                    {
-                        model_transform = this.get_model_transform_from_grid(j, i, ' ');
-                        this.shapes.player.draw(context, program_state, model_transform, this.materials.plane);
-                        player_spawned = true;
-                    }
+                } else if(maze[i][j].isEnd) { //draw end 
+                    model_transform = get_model_transform_from_grid(i, j);
+                    this.shapes.sphere.draw(context, program_state, model_transform, this.materials.grey_plastic);
                 }
             }
         }
+        //draw player place holder for now TODO: implement player movement animation
+        this.shapes.player.draw(context, program_state, this.board.player.model_transform, this.materials.plane);
     }
 }
