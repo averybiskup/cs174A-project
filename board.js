@@ -210,7 +210,7 @@ class Board {
                this.start_x = start_x;
                this.start_z = start_z;
                this.final_grid[start_z][start_x].isPlayer = true;
-               this.player = new Player(start_x, start_z, get_model_transform_from_grid(start_x, start_z));
+               this.player = new Player(start_x, start_z, 0.8, 0, 8);
                isPlayerPlaced = true;
             }
         }
@@ -227,6 +227,38 @@ class Board {
                 this.final_grid[end_z][end_x].isEnd = true;
                 isEndPlaced = true;
             }
+        }
+    }
+
+    //move player grid by grid one dir at a time
+    discrete_move_player(dt){
+        if(this.player.isMovingN){
+            this.player.move_north(dt);
+        }
+        if(this.player.N_moving_distance >= 2){ 
+            this.player.isMovingN = false; //stop the movement 
+            this.player.N_moving_distance = 0; //reset single movement distance
+        }
+        if(this.player.isMovingS){
+            this.player.move_south(dt);
+        }
+        if(this.player.S_moving_distance >= 2){ 
+            this.player.isMovingS = false; //stop the movement 
+            this.player.S_moving_distance = 0; //reset single movement distance
+        }
+        if(this.player.isMovingE){
+            this.player.move_east(dt);
+        }
+        if(this.player.E_moving_distance >= 2){ 
+            this.player.isMovingE = false; //stop the movement 
+            this.player.E_moving_distance = 0; //reset single movement distance
+        }
+        if(this.player.isMovingW){
+            this.player.move_west(dt);
+        }
+        if(this.player.W_moving_distance >= 2){ 
+            this.player.isMovingW = false; //stop the movement 
+            this.player.W_moving_distance = 0; //reset single movement distance
         }
     }
 

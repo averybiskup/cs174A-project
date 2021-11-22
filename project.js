@@ -111,17 +111,23 @@ export class Project extends Base_Scene {
 
         // Draw the scene's buttons, setup their actions and keyboard shortcuts, and monitor live measurements.
         this.key_triggered_button("Test", ["c"], () => console.log('test'));
+        //for discrete movement testing purpose
+        this.key_triggered_button("Move 1 grid N", ["i"], () => this.board.player.isMovingN = true);
+        this.key_triggered_button("Move 1 grid S", ["k"], () => this.board.player.isMovingS = true);
+        this.key_triggered_button("Move 1 grid W", ["j"], () => this.board.player.isMovingW = true);
+        this.key_triggered_button("Move 1 grid E", ["l"], () => this.board.player.isMovingE = true);
     }
 
     display(context, program_state) {
         super.display(context, program_state);
         //draw the maze contents according to board(see definition in board.js) (needs to be replaced later)
         let t = program_state.animation_time / 1000;
+        let dt = program_state.animation_delta_time / 1000;
         
         //draw maze 
+        let model_transform = Mat4.identity();
         for(let i = 0; i < this.board.final_grid.length; i++){
             for(let j = 0; j < this.board.final_grid[0].length; j++){
-                let model_transform
                 let maze = this.board.final_grid;
                 if (maze[i][j].iswall) { //draw wall
                     model_transform = get_model_transform_from_grid(i, j);
@@ -133,6 +139,8 @@ export class Project extends Base_Scene {
             }
         }
         //draw player place holder for now TODO: implement player movement animation
-        this.shapes.player.draw(context, program_state, this.board.player.model_transform, this.materials.plane);
+        this.board.discrete_move_player(dt);
+        model_transform = (this.board.player.model_transform).times(Mat4.rotation(this.board.player.point_to, 0, 1, 0));
+        this.shapes.player.draw(context, program_state, model_transform, this.materials.plane);
     }
 }

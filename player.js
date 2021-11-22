@@ -1,4 +1,5 @@
 import {defs, tiny} from './examples/common.js';
+import { get_model_transform_from_grid } from './utilities.js';
 
 const {
     Vector, Vector3, vec, vec3, vec4, color, hex_color, Matrix, Mat4, Light, Shape, Material, Scene,
@@ -7,30 +8,58 @@ const {
  //Implementation of player's movement goes here
 
  class Player {
-    constructor(player_x, player_z, current_model_transform){
+    constructor(player_x, player_z, scale, point_to, speed){
         this.grid_x = player_x; //grid x-coord of player 
-        this.grid_z = player_z; //grid z-coord of player 
-        this.point_to = 0; //direction the player points to relative to South default 0 rad  
-        this.model_transform = current_model_transform; //holds current model_transform of player for mixing later on
+        this.grid_z = player_z; //grid z-coord of player
+        this.scale = scale; //player model scaling  
+        this.point_to = point_to; //direction the player points to relative to South default 0 rad  
+        this.speed = speed; //default speed 2 units/second 
+        this.model_transform = get_model_transform_from_grid(player_z, player_x).times(Mat4.scale(this.scale/0.8, this.scale/0.8, this.scale/0.8)); //holds current model_transform of player
+        //stores player's states. 
+        //store total time player moving
+        this.N_dt = 0; //store total time player moving N
+        this.S_dt = 0; //^^S
+        this.W_dt = 0; //^^W
+        this.E_dt = 0; //^^E
+
+        this.isMovingN = false;
+        this.isMovingS = false;
+        this.isMovingW = false;
+        this.isMovingE = false;
+
+        //keep track of how far the player move for one movement
+        this.N_moving_distance = 0.0;
+        this.S_moving_distance = 0.0;  
+        this.W_moving_distance = 0.0;  
+        this.E_moving_distance = 0.0;    
     }
 
-    //implement discrete movement of player for automated path finding algorithm. place holder for now  
-    move_north(){
-         let model_transform = this.model_transform;
-         return model_transform;
-     }
-    move_south(){
-        let model_transform = this.model_transform;
-        return model_transform;
+    //implement movement of player for automated path finding algorithm.
+    move_north(dt){
+        this.point_to = Math.PI;
+        this.N_moving_distance += dt*this.speed*this.scale;
+        this.N_dt += dt;
+        this.model_transform = this.model_transform.times(Mat4.translation(0, 0, -dt*this.speed));
     }
-    move_west(){
-        let model_transform = this.model_transform;
-        return model_transform;
+    move_south(dt){
+        this.point_to = 0;
+        this.S_moving_distance += dt*this.speed*this.scale;
+        this.S_dt += dt;
+        this.model_transform = this.model_transform.times(Mat4.translation(0, 0, dt*this.speed));
     }
-    move_east(){
-        let model_transform = this.model_transform;
-        return model_transform;
+    move_west(dt){
+        this.point_to = 3/2*Math.PI;
+        this.W_moving_distance += dt*this.speed*this.scale;
+        this.W_dt += dt;
+        this.model_transform = this.model_transform.times(Mat4.translation(-dt*this.speed, 0, 0));
     }
+    move_east(dt){
+        this.point_to = Math.PI/2;
+        this.E_moving_distance += dt*this.speed*this.scale;
+        this.E_dt += dt;
+        this.model_transform = this.model_transform.times(Mat4.translation(dt*this.speed, 0, 0));
+    }
+
  }
 
  export {Player};
