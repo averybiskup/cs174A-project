@@ -60,6 +60,9 @@ const {
         this.model_transform = this.model_transform.times(Mat4.translation(dt*this.speed, 0, 0));
     }
 
+    is_moving(){
+        return this.isMovingE || this.isMovingN || this.isMovingS || this.isMovingW;
+    }
  }
 
  export {Player};

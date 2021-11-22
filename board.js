@@ -22,9 +22,79 @@ class FinalCell {
     constructor(x, y) {
         this.x = x;
         this.y = y;
+        this.isShown = true;
         this.iswall = true;
         this.isEnd = false;
         this.isPlayer = false;
+        this.isVisited = false;
+        this.isAnimating = false;
+        this.animation_time = 0;
+        //color
+        this.r;
+        this.g;
+        this.b;
+        this.color;
+        //scale
+        this.isScaling = false;
+        this.scale = 1.0;
+        this.scale_time = 0;
+    }
+    init_color(){
+        if(this.iswall || this.isEnd){
+            this.r = 0.5;
+            this.g = 0.5;
+            this.b = 0.5;
+        }else if(!this.iswall){
+            this.r = 1.0;
+            this.g = 1.0;
+            this.b = 1.0;
+        }
+        this.color = color(this.r, this.g, this.b, 1.0);
+    }
+    update_appearance(dt, current_x, current_z, path_next_x, path_next_z){
+        if(this.x === path_next_x && this.y === path_next_z){
+            this.r = 1.0;
+            this.g = 1.0;
+            this.b = 0.0;
+            this.isShown = false;
+        }
+        else if(this.x === current_x && this.y === current_z){//current grid being visited by the algorithm
+            this.color = color(1.0, 1.0, 0.0, 1.0);
+        }
+        else if(this.isAnimating){
+            //starting color
+            if(this.animation_time === 0){
+                this.r = 1.0;
+                this.g = 0.8;
+                this.b = 0.0;
+            }
+            this.animation_time += dt;
+            this.r = this.r - dt;
+            this.b = this.b + dt;
+            this.color = color(Math.max(this.r, 0), this.g, Math.min(this.b, 1.0), 1.0)
+            if(this.r <= 0 || this.b >=1.0){
+                this.r = 0;
+                this.b = 1.0;
+                this.isAnimating = false;
+            } 
+        }
+        else{//color remain unchanged
+            this.color = color(this.r, this.g, this.b, 1.0);
+            this.isShown = true;
+        }
+
+        if(this.isScaling){
+            //set initial scale
+            if(this.scale_time === 0){
+                this.scale = 0.4;
+            }
+            this.scale_time += dt;
+            this.scale = Math.min(this.scale+dt, 1.0);
+            if(this.scale >= 1.0){
+                this.isScaling = false;
+                this.scale = 1.0;
+            }
+        }
     }
     
 }
@@ -59,6 +129,19 @@ class Board {
         this.init_grid();
         this.init_player();
         this.init_end();
+        this.init_grid_appearance();
+        this.current_x = this.start_x; //searching alg current x 
+        this.current_z = this.start_z; //searching alg current y  
+        this.time_interval_between_step = 0.04;//default time interval between step
+        this.isFoundEnd = false; // searching alg already found end point
+        this.isRunningDFS = false;
+        this.path = [[' ', this.current_x, this.current_z]]; //store the path of the player each element is an array of 3 elements ['direction', grid_x,  grid_z]
+        this.isTracingPath = false;
+        this.path_index = 1;
+        this.path_prev_x = this.start_x;
+        this.path_prev_z = this.start_z;
+        this.path_next_x = this.start_x;
+        this.path_next_z = this.start_z;
     }
 
 
@@ -66,6 +149,10 @@ class Board {
     between(value, min, max) {
         return value >= min && value <= max;    
     }
+
+    is_in_bound(x, z){
+        return this.between(x, 0, this.grid_width*2 - 1) && this.between(z, 0, this.grid_height*2 - 1);
+    } 
 
     // method for randomly shuffling an array
     shuf(array) {
@@ -210,7 +297,7 @@ class Board {
                this.start_x = start_x;
                this.start_z = start_z;
                this.final_grid[start_z][start_x].isPlayer = true;
-               this.player = new Player(start_x, start_z, 0.8, 0, 8);
+               this.player = new Player(start_x, start_z, 0.8, 0, 20);
                isPlayerPlaced = true;
             }
         }
@@ -228,6 +315,22 @@ class Board {
                 isEndPlaced = true;
             }
         }
+    }
+
+    init_grid_appearance(){
+        for (let i = 0; i < this.grid_height*2; i++) {
+            for (let j = 0; j < this.grid_width*2; j++) {
+                this.final_grid[i][j].init_color();
+            }
+        }
+    }
+
+    update_grid_appearance(dt){ //temporary for testing 
+        for (let i = 0; i < this.grid_height*2; i++) {
+            for (let j = 0; j < this.grid_width*2; j++) {
+                this.final_grid[i][j].update_appearance(dt, this.current_x, this.current_z, this.path_next_x, this.path_next_z);
+            }
+        } 
     }
 
     //move player grid by grid one dir at a time
@@ -263,8 +366,91 @@ class Board {
     }
 
     //implement search algorithm 
-    dfs(){}
+    single_step_dfs(){
+        let current_x = this.current_x;
+        let current_z = this.current_z;
+        this.final_grid[current_z][current_x].isVisited = true;
+        if(this.final_grid[current_z][current_x].isEnd){
+            this.isFoundEnd = true;
+        }
+        else{
+            //try moving north
+            if(this.is_in_bound(current_x, current_z - 1) 
+            && !this.final_grid[current_z - 1][current_x].iswall
+            && !this.final_grid[current_z - 1][current_x].isVisited){//coord inbound and is not wall and is not visited 
+                current_z--;
+                this.final_grid[current_z][current_x].isVisited = true;
+                this.final_grid[current_z][current_x].isAnimating = true;
+                this.path.push(['N', current_x, current_z])
+                this.current_x = current_x;
+                this.current_z = current_z;
+            }
+            //try moving south
+            else if(this.is_in_bound(current_x, current_z + 1) 
+            && !this.final_grid[current_z + 1][current_x].iswall
+            && !this.final_grid[current_z + 1][current_x].isVisited){//coord inbound and is not wall and is not visited 
+                current_z++;
+                this.final_grid[current_z][current_x].isVisited = true;
+                this.final_grid[current_z][current_x].isAnimating = true;
+                this.path.push(['S', current_x, current_z])
+                this.current_x = current_x;
+                this.current_z = current_z;
+            }
+            //try moving west
+            else if(this.is_in_bound(current_x - 1, current_z) 
+            && !this.final_grid[current_z][current_x - 1].iswall
+            && !this.final_grid[current_z][current_x - 1].isVisited){//coord inbound and is not wall and is not visited 
+                current_x--;
+                this.final_grid[current_z][current_x].isVisited = true;
+                this.final_grid[current_z][current_x].isAnimating = true;
+                this.path.push(['W', current_x, current_z])
+                this.current_x = current_x;
+                this.current_z = current_z;
+            }
+            //try moving east
+            else if(this.is_in_bound(current_x + 1, current_z) 
+            && !this.final_grid[current_z][current_x + 1].iswall
+            && !this.final_grid[current_z][current_x + 1].isVisited){//coord inbound and is not wall and is not visited 
+                current_x++;
+                this.final_grid[current_z][current_x].isVisited = true;
+                this.final_grid[current_z][current_x].isAnimating = true;
+                this.path.push(['E', current_x, current_z])
+                this.current_x = current_x;
+                this.current_z = current_z;
+            }
+            else{
+                this.path.pop();
+                this.current_x = this.path[this.path.length - 1][1];
+                this.current_z = this.path[this.path.length - 1][2]; 
+            }
+        } 
+    }
     bfs(){}
+
+    single_step_trace_path(){
+        this.final_grid[this.start_z][this.start_x].isPlayer = false; //now player no longer stays here 
+        if(this.path_index >= this.path.length){
+            this.isTracingPath = false;
+        }else{
+            let moving_direction = this.path[this.path_index][0];
+            this.path_next_x = this.path[this.path_index][1];
+            this.path_next_z = this.path[this.path_index][2];
+            this.path_prev_x = this.path[this.path_index - 1][1];
+            this.path_prev_z = this.path[this.path_index - 1][2]; 
+            this.final_grid[this.path_prev_z][this.path_prev_x].isScaling = true;
+            switch(moving_direction){
+                case 'N': this.player.isMovingN = true;
+                          break;
+                case 'S': this.player.isMovingS = true;
+                          break;
+                case 'W': this.player.isMovingW = true;
+                          break;
+                case 'E': this.player.isMovingE = true;
+                          break;
+            }
+        }
+        
+    }
 
 }
 

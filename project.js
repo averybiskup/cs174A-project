@@ -57,16 +57,16 @@ class Base_Scene extends Scene {
         let model_transform = Mat4.identity();
         model_transform = model_transform.times(Mat4.scale(1.0, 1.0, height/2))
                                          .times(Mat4.translation(-1.0, 1.0, 1.0))
-        this.shapes.boarder.draw(context, program_state, model_transform, this.materials.white_plastic);
+        this.shapes.boarder.draw(context, program_state, model_transform, this.materials.grey_plastic);
         model_transform = model_transform.times(Mat4.translation(width+2, 0, 0));
-        this.shapes.boarder.draw(context, program_state, model_transform, this.materials.white_plastic);
+        this.shapes.boarder.draw(context, program_state, model_transform, this.materials.grey_plastic);
         model_transform = Mat4.identity();
         model_transform = model_transform.times(Mat4.translation(-2.0, 0, 0))
                                          .times(Mat4.scale(width/2+2, 1.0, 1.0))
                                          .times(Mat4.translation(1.0, 1.0, -1.0));
-        this.shapes.boarder.draw(context, program_state, model_transform, this.materials.white_plastic);
+        this.shapes.boarder.draw(context, program_state, model_transform, this.materials.grey_plastic);
         model_transform = model_transform.times(Mat4.translation(0, 0, height+2));
-        this.shapes.boarder.draw(context, program_state, model_transform, this.materials.white_plastic);
+        this.shapes.boarder.draw(context, program_state, model_transform, this.materials.grey_plastic);
     }
 
     display(context, program_state) {
@@ -104,6 +104,7 @@ export class Project extends Base_Scene {
         // Randomly place start and end point
         this.board = new Board(this.board_width/2, 
                                this.board_height/2);
+        this.time_counter = 0;
 
     }
 
@@ -116,6 +117,7 @@ export class Project extends Base_Scene {
         this.key_triggered_button("Move 1 grid S", ["k"], () => this.board.player.isMovingS = true);
         this.key_triggered_button("Move 1 grid W", ["j"], () => this.board.player.isMovingW = true);
         this.key_triggered_button("Move 1 grid E", ["l"], () => this.board.player.isMovingE = true);
+        this.key_triggered_button("Run DFS", ['x'], () => this.board.isRunningDFS = true);
     }
 
     display(context, program_state) {
@@ -131,13 +133,40 @@ export class Project extends Base_Scene {
                 let maze = this.board.final_grid;
                 if (maze[i][j].iswall) { //draw wall
                     model_transform = get_model_transform_from_grid(i, j);
-                    this.shapes.cube.draw(context, program_state, model_transform, this.materials.grey_plastic);
+                    this.shapes.cube.draw(context, program_state, model_transform, this.materials.grey_plastic.override({color: maze[i][j].color}));
                 } else if(maze[i][j].isEnd) { //draw end 
                     model_transform = get_model_transform_from_grid(i, j);
-                    this.shapes.sphere.draw(context, program_state, model_transform, this.materials.grey_plastic);
+                    this.shapes.sphere.draw(context, program_state, model_transform, this.materials.grey_plastic.override({color: maze[i][j].color}));
+                } else if(!maze[i][j].isPlayer && maze[i][j].isShown){
+                    model_transform = get_model_transform_from_grid(i, j);
+                    let scale = maze[i][j].scale;
+                    model_transform = model_transform.times(Mat4.scale(scale, scale, scale));
+                    this.shapes.cube.draw(context, program_state, model_transform, this.materials.white_plastic.override({color: maze[i][j].color}));
                 }
             }
         }
+        //run searching algorithm
+        if(this.board.isRunningDFS){
+            this.time_counter += dt;
+            if(this.time_counter > this.board.time_interval_between_step){
+                this.board.single_step_dfs();
+                this.time_counter = 0;
+            }
+        }
+        if(this.board.isFoundEnd){
+            this.board.isRunningDFS = false;
+            this.time_counter += dt;
+            if(this.time_counter > 1.0){ //wait for 1 sec before tracing the path 
+                this.board.isTracingPath = true;
+                this.time_counter = 0;
+            }
+        }
+        //trace path 
+        if(this.board.isTracingPath && !this.board.player.is_moving()){
+            this.board.single_step_trace_path();
+            this.board.path_index++;
+        }
+        this.board.update_grid_appearance(dt);
         //draw player place holder for now TODO: implement player movement animation
         this.board.discrete_move_player(dt);
         model_transform = (this.board.player.model_transform).times(Mat4.rotation(this.board.player.point_to, 0, 1, 0));
