@@ -6,6 +6,43 @@ const {
     Vector, Vector3, vec, vec3, vec4, color, hex_color, Matrix, Mat4, Light, Shape, Material, Scene,
 } = tiny;
 
+/*----Global variables------*/
+//cell/grid parameters
+const CELL_SCALE = 1.0;
+const GRID_UNIT_LENGTH = 2;
+
+//algorithm searching time interval 
+const DEFAULT_TIME_INTERVAL = 0.04;
+
+//default player parameters 
+const PLAYER_SPEED = 20;
+const PLAYER_SCALE = 0.8;
+const PLAYER_POINT_TO = 0;
+
+//default colors
+const END_WALL_COLOR_R = 0.5;
+const END_WALL_COLOR_G = 0.5;
+const END_WALL_COLOR_B = 0.5;
+
+const EMPTY_SPACE_COLOR_R = 1.0;
+const EMPTY_SPACE_COLOR_G = 1.0;
+const EMPTY_SPACE_COLOR_B = 1.0;
+
+const PATH_COLOR_R = 1.0;
+const PATH_COLOR_G = 1.0;
+const PATH_COLOR_B = 0.0;
+
+const VISITING_COLOR = color(1.0, 1.0, 0.0, 1.0);
+
+const VISITED_INIT_COLOR_R = 1.0;
+const VISITED_INIT_COLOR_G = 0.8;
+const VISITED_INIT_COLOR_B = 0.0;
+
+//default scale for path animation
+const INIT_SCALE = 0.4;
+const MAX_SCALE = 1.0;
+const DEFAULT_SCALE_RATE = 1.0;
+
 
 class Cell {
     constructor(x, y) {
@@ -27,55 +64,56 @@ class FinalCell {
         this.isEnd = false;
         this.isPlayer = false;
         this.isVisited = false;
-        this.isAnimating = false;
-        this.animation_time = 0;
         //color
+        this.is_changing_color = false;
+        this.is_init_color_set = false;
         this.r;
         this.g;
         this.b;
         this.color;
         //scale
         this.isScaling = false;
-        this.scale = 1.0;
-        this.scale_time = 0;
+        this.is_init_scale_set = false;
+        this.scale = CELL_SCALE;
+        this.scale_rate = DEFAULT_SCALE_RATE; 
     }
     init_color(){
         if(this.iswall || this.isEnd){
-            this.r = 0.5;
-            this.g = 0.5;
-            this.b = 0.5;
+            this.r = END_WALL_COLOR_R;
+            this.g = END_WALL_COLOR_G;
+            this.b = END_WALL_COLOR_B;
         }else if(!this.iswall){
-            this.r = 1.0;
-            this.g = 1.0;
-            this.b = 1.0;
+            this.r = EMPTY_SPACE_COLOR_R;
+            this.g = EMPTY_SPACE_COLOR_G;
+            this.b = EMPTY_SPACE_COLOR_B;
         }
         this.color = color(this.r, this.g, this.b, 1.0);
     }
     update_appearance(dt, current_x, current_z, path_next_x, path_next_z){
-        if(this.x === path_next_x && this.y === path_next_z){
-            this.r = 1.0;
-            this.g = 1.0;
-            this.b = 0.0;
+        if(this.x === path_next_x && this.y === path_next_z){//set next grid in the path yellow and hide it 
+            this.r = PATH_COLOR_R;
+            this.g = PATH_COLOR_G;
+            this.b = PATH_COLOR_B;
             this.isShown = false;
         }
         else if(this.x === current_x && this.y === current_z){//current grid being visited by the algorithm
-            this.color = color(1.0, 1.0, 0.0, 1.0);
+            this.color = VISITING_COLOR;
         }
-        else if(this.isAnimating){
+        else if(this.is_changing_color){
             //starting color
-            if(this.animation_time === 0){
-                this.r = 1.0;
-                this.g = 0.8;
-                this.b = 0.0;
+            if(!this.is_init_color_set){
+                this.r = VISITED_INIT_COLOR_R;
+                this.g = VISITED_INIT_COLOR_G;
+                this.b = VISITED_INIT_COLOR_B;
             }
-            this.animation_time += dt;
+            this.is_init_color_set = true;
             this.r = this.r - dt;
             this.b = this.b + dt;
             this.color = color(Math.max(this.r, 0), this.g, Math.min(this.b, 1.0), 1.0)
             if(this.r <= 0 || this.b >=1.0){
                 this.r = 0;
                 this.b = 1.0;
-                this.isAnimating = false;
+                this.is_changing_color = false;
             } 
         }
         else{//color remain unchanged
@@ -85,14 +123,14 @@ class FinalCell {
 
         if(this.isScaling){
             //set initial scale
-            if(this.scale_time === 0){
-                this.scale = 0.4;
+            if(!this.is_init_scale_set){
+                this.scale = INIT_SCALE;
             }
-            this.scale_time += dt;
-            this.scale = Math.min(this.scale+dt, 1.0);
-            if(this.scale >= 1.0){
+            this.is_init_scale_set = true;
+            this.scale = Math.min(this.scale+dt*this.scale_rate, MAX_SCALE);
+            if(this.scale >= MAX_SCALE){
                 this.isScaling = false;
-                this.scale = 1.0;
+                this.scale = MAX_SCALE;
             }
         }
     }
@@ -132,7 +170,7 @@ class Board {
         this.init_grid_appearance();
         this.current_x = this.start_x; //searching alg current x 
         this.current_z = this.start_z; //searching alg current y  
-        this.time_interval_between_step = 0.04;//default time interval between step
+        this.time_interval_between_step = DEFAULT_TIME_INTERVAL;//default time interval between step
         this.isFoundEnd = false; // searching alg already found end point
         this.isRunningDFS = false;
         this.path = [[' ', this.current_x, this.current_z]]; //store the path of the player each element is an array of 3 elements ['direction', grid_x,  grid_z]
@@ -297,7 +335,7 @@ class Board {
                this.start_x = start_x;
                this.start_z = start_z;
                this.final_grid[start_z][start_x].isPlayer = true;
-               this.player = new Player(start_x, start_z, 0.8, 0, 20);
+               this.player = new Player(start_x, start_z, PLAYER_SCALE, PLAYER_POINT_TO, PLAYER_SPEED);
                isPlayerPlaced = true;
             }
         }
@@ -325,7 +363,7 @@ class Board {
         }
     }
 
-    update_grid_appearance(dt){ //temporary for testing 
+    update_grid_appearance(dt){ //for searching alg visualization (color and scale)
         for (let i = 0; i < this.grid_height*2; i++) {
             for (let j = 0; j < this.grid_width*2; j++) {
                 this.final_grid[i][j].update_appearance(dt, this.current_x, this.current_z, this.path_next_x, this.path_next_z);
@@ -338,28 +376,28 @@ class Board {
         if(this.player.isMovingN){
             this.player.move_north(dt);
         }
-        if(this.player.N_moving_distance >= 2){ 
+        if(this.player.N_moving_distance >= GRID_UNIT_LENGTH){ 
             this.player.isMovingN = false; //stop the movement 
             this.player.N_moving_distance = 0; //reset single movement distance
         }
         if(this.player.isMovingS){
             this.player.move_south(dt);
         }
-        if(this.player.S_moving_distance >= 2){ 
+        if(this.player.S_moving_distance >= GRID_UNIT_LENGTH){ 
             this.player.isMovingS = false; //stop the movement 
             this.player.S_moving_distance = 0; //reset single movement distance
         }
         if(this.player.isMovingE){
             this.player.move_east(dt);
         }
-        if(this.player.E_moving_distance >= 2){ 
+        if(this.player.E_moving_distance >= GRID_UNIT_LENGTH){ 
             this.player.isMovingE = false; //stop the movement 
             this.player.E_moving_distance = 0; //reset single movement distance
         }
         if(this.player.isMovingW){
             this.player.move_west(dt);
         }
-        if(this.player.W_moving_distance >= 2){ 
+        if(this.player.W_moving_distance >= GRID_UNIT_LENGTH){ 
             this.player.isMovingW = false; //stop the movement 
             this.player.W_moving_distance = 0; //reset single movement distance
         }
@@ -380,7 +418,7 @@ class Board {
             && !this.final_grid[current_z - 1][current_x].isVisited){//coord inbound and is not wall and is not visited 
                 current_z--;
                 this.final_grid[current_z][current_x].isVisited = true;
-                this.final_grid[current_z][current_x].isAnimating = true;
+                this.final_grid[current_z][current_x].is_changing_color = true;
                 this.path.push(['N', current_x, current_z])
                 this.current_x = current_x;
                 this.current_z = current_z;
@@ -391,7 +429,7 @@ class Board {
             && !this.final_grid[current_z + 1][current_x].isVisited){//coord inbound and is not wall and is not visited 
                 current_z++;
                 this.final_grid[current_z][current_x].isVisited = true;
-                this.final_grid[current_z][current_x].isAnimating = true;
+                this.final_grid[current_z][current_x].is_changing_color = true;
                 this.path.push(['S', current_x, current_z])
                 this.current_x = current_x;
                 this.current_z = current_z;
@@ -402,7 +440,7 @@ class Board {
             && !this.final_grid[current_z][current_x - 1].isVisited){//coord inbound and is not wall and is not visited 
                 current_x--;
                 this.final_grid[current_z][current_x].isVisited = true;
-                this.final_grid[current_z][current_x].isAnimating = true;
+                this.final_grid[current_z][current_x].is_changing_color = true;
                 this.path.push(['W', current_x, current_z])
                 this.current_x = current_x;
                 this.current_z = current_z;
@@ -413,12 +451,12 @@ class Board {
             && !this.final_grid[current_z][current_x + 1].isVisited){//coord inbound and is not wall and is not visited 
                 current_x++;
                 this.final_grid[current_z][current_x].isVisited = true;
-                this.final_grid[current_z][current_x].isAnimating = true;
+                this.final_grid[current_z][current_x].is_changing_color = true;
                 this.path.push(['E', current_x, current_z])
                 this.current_x = current_x;
                 this.current_z = current_z;
             }
-            else{
+            else{ //trace back
                 this.path.pop();
                 this.current_x = this.path[this.path.length - 1][1];
                 this.current_z = this.path[this.path.length - 1][2]; 

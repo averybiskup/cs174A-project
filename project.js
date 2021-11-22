@@ -111,13 +111,14 @@ export class Project extends Base_Scene {
     make_control_panel() {
 
         // Draw the scene's buttons, setup their actions and keyboard shortcuts, and monitor live measurements.
-        this.key_triggered_button("Test", ["c"], () => console.log('test'));
+
         //for discrete movement testing purpose
         this.key_triggered_button("Move 1 grid N", ["i"], () => this.board.player.isMovingN = true);
         this.key_triggered_button("Move 1 grid S", ["k"], () => this.board.player.isMovingS = true);
         this.key_triggered_button("Move 1 grid W", ["j"], () => this.board.player.isMovingW = true);
         this.key_triggered_button("Move 1 grid E", ["l"], () => this.board.player.isMovingE = true);
-        this.key_triggered_button("Run DFS", ['x'], () => this.board.isRunningDFS = true);
+        
+        this.key_triggered_button("Run DFS", ['x'], () => this.board.isRunningDFS = true); //visualize dfs
     }
 
     display(context, program_state) {
@@ -167,7 +168,7 @@ export class Project extends Base_Scene {
             this.board.path_index++;
         }
         this.board.update_grid_appearance(dt);
-        //draw player place holder for now TODO: implement player movement animation
+        //draw player
         this.board.discrete_move_player(dt);
         model_transform = (this.board.player.model_transform).times(Mat4.rotation(this.board.player.point_to, 0, 1, 0));
         this.shapes.player.draw(context, program_state, model_transform, this.materials.plane);
