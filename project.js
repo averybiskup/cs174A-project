@@ -117,7 +117,7 @@ export class Project extends Base_Scene {
         this.key_triggered_button("Move 1 grid S", ["k"], () => this.board.player.isMovingS = true);
         this.key_triggered_button("Move 1 grid W", ["j"], () => this.board.player.isMovingW = true);
         this.key_triggered_button("Move 1 grid E", ["l"], () => this.board.player.isMovingE = true);
-        
+
         this.key_triggered_button("Run DFS", ['x'], () => this.board.isRunningDFS = true); //visualize dfs
     }
 

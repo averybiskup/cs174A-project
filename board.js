@@ -90,16 +90,16 @@ class FinalCell {
         this.color = color(this.r, this.g, this.b, 1.0);
     }
     update_appearance(dt, current_x, current_z, path_next_x, path_next_z){
-        if(this.x === path_next_x && this.y === path_next_z){//set next grid in the path yellow and hide it 
+        if(this.x === path_next_x && this.y === path_next_z){ //set next grid in the path yellow and hide it so it does not block player
             this.r = PATH_COLOR_R;
             this.g = PATH_COLOR_G;
             this.b = PATH_COLOR_B;
             this.isShown = false;
         }
-        else if(this.x === current_x && this.y === current_z){//current grid being visited by the algorithm
+        else if(this.x === current_x && this.y === current_z){ //current grid being visited by the algorithm
             this.color = VISITING_COLOR;
         }
-        else if(this.is_changing_color){
+        else if(this.is_changing_color){ //visited grid color effect
             //starting color
             if(!this.is_init_color_set){
                 this.r = VISITED_INIT_COLOR_R;
@@ -116,12 +116,12 @@ class FinalCell {
                 this.is_changing_color = false;
             } 
         }
-        else{//color remain unchanged
+        else{ //color remain unchanged
             this.color = color(this.r, this.g, this.b, 1.0);
             this.isShown = true;
         }
 
-        if(this.isScaling){
+        if(this.isScaling){ //path scaling effect when tracing path  
             //set initial scale
             if(!this.is_init_scale_set){
                 this.scale = INIT_SCALE;
@@ -168,11 +168,13 @@ class Board {
         this.init_player();
         this.init_end();
         this.init_grid_appearance();
+        //searching alg
         this.current_x = this.start_x; //searching alg current x 
         this.current_z = this.start_z; //searching alg current y  
         this.time_interval_between_step = DEFAULT_TIME_INTERVAL;//default time interval between step
         this.isFoundEnd = false; // searching alg already found end point
         this.isRunningDFS = false;
+        //path tracing 
         this.path = [[' ', this.current_x, this.current_z]]; //store the path of the player each element is an array of 3 elements ['direction', grid_x,  grid_z]
         this.isTracingPath = false;
         this.path_index = 1;
