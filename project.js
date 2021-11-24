@@ -1,6 +1,6 @@
 import {defs, tiny} from './examples/common.js';
 import {Board} from './board.js';
-import { get_model_transform_from_grid } from './utilities.js';
+import { get_model_translate_from_grid } from './utilities.js';
 
 const {
     Vector, Vector3, vec, vec3, vec4, color, hex_color, Matrix, Mat4, Light, Shape, Material, Scene,
@@ -133,13 +133,17 @@ export class Project extends Base_Scene {
             for(let j = 0; j < this.board.final_grid[0].length; j++){
                 let maze = this.board.final_grid;
                 if (maze[i][j].iswall) { //draw wall
-                    model_transform = get_model_transform_from_grid(i, j);
+                    model_transform = get_model_translate_from_grid(i, j);
+                    let scale = maze[i][j].scale;
+                    model_transform = model_transform.times(Mat4.scale(scale, scale, scale));
                     this.shapes.cube.draw(context, program_state, model_transform, this.materials.grey_plastic.override({color: maze[i][j].color}));
                 } else if(maze[i][j].isEnd) { //draw end 
-                    model_transform = get_model_transform_from_grid(i, j);
+                    model_transform = get_model_translate_from_grid(i, j);
+                    let scale = maze[i][j].scale;
+                    model_transform = model_transform.times(Mat4.scale(scale, scale, scale));
                     this.shapes.sphere.draw(context, program_state, model_transform, this.materials.grey_plastic.override({color: maze[i][j].color}));
                 } else if(!maze[i][j].isPlayer && maze[i][j].isShown){
-                    model_transform = get_model_transform_from_grid(i, j);
+                    model_transform = get_model_translate_from_grid(i, j);
                     let scale = maze[i][j].scale;
                     model_transform = model_transform.times(Mat4.scale(scale, scale, scale));
                     this.shapes.cube.draw(context, program_state, model_transform, this.materials.white_plastic.override({color: maze[i][j].color}));
@@ -170,7 +174,8 @@ export class Project extends Base_Scene {
         this.board.update_grid_appearance(dt);
         //draw player
         this.board.discrete_move_player(dt);
-        model_transform = (this.board.player.model_transform).times(Mat4.rotation(this.board.player.point_to, 0, 1, 0));
+        model_transform = (this.board.player.model_transform).times(Mat4.rotation(this.board.player.point_to, 0, 1, 0))
+                                                             .times(Mat4.scale(this.board.player.scale, this.board.player.scale, this.board.player.scale));
         this.shapes.player.draw(context, program_state, model_transform, this.materials.plane);
     }
 }

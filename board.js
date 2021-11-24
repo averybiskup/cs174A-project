@@ -1,6 +1,6 @@
-import {defs, tiny} from './examples/common.js';
-import {Player} from './player.js';
-import {rand_int, get_model_transform_from_grid} from './utilities.js';
+import { defs, tiny } from './examples/common.js';
+import { Player } from './player.js';
+import { rand_int, get_model_translate_from_grid } from './utilities.js';
 
 const {
     Vector, Vector3, vec, vec3, vec4, color, hex_color, Matrix, Mat4, Light, Shape, Material, Scene,
@@ -8,7 +8,6 @@ const {
 
 /*----Global variables------*/
 //cell/grid parameters
-const CELL_SCALE = 1.0;
 const GRID_UNIT_LENGTH = 2;
 
 //algorithm searching time interval 
@@ -34,13 +33,16 @@ const PATH_COLOR_B = 0.0;
 
 const VISITING_COLOR = color(1.0, 1.0, 0.0, 1.0);
 
+const START_COLOR = color(1.0, 0.753, 0.796, 1.0)
+
 const VISITED_INIT_COLOR_R = 1.0;
 const VISITED_INIT_COLOR_G = 0.8;
 const VISITED_INIT_COLOR_B = 0.0;
 
 //default scale for path animation
-const INIT_SCALE = 0.4;
-const MAX_SCALE = 1.0;
+const DEFAULT_SCALE = 0.8;
+const INIT_SCALE = 0.32;
+const MAX_SCALE = 0.8;
 const DEFAULT_SCALE_RATE = 1.0;
 
 
@@ -61,6 +63,7 @@ class FinalCell {
         this.y = y;
         this.isShown = true;
         this.iswall = true;
+        this.isStart = false;
         this.isEnd = false;
         this.isPlayer = false;
         this.isVisited = false;
@@ -74,34 +77,37 @@ class FinalCell {
         //scale
         this.isScaling = false;
         this.is_init_scale_set = false;
-        this.scale = CELL_SCALE;
-        this.scale_rate = DEFAULT_SCALE_RATE; 
+        this.scale = DEFAULT_SCALE;
+        this.scale_rate = DEFAULT_SCALE_RATE;
     }
-    init_color(){
-        if(this.iswall || this.isEnd){
+    init_color() {
+        if (this.iswall || this.isEnd) {
             this.r = END_WALL_COLOR_R;
             this.g = END_WALL_COLOR_G;
             this.b = END_WALL_COLOR_B;
-        }else if(!this.iswall){
+        } else if (!this.iswall) {
             this.r = EMPTY_SPACE_COLOR_R;
             this.g = EMPTY_SPACE_COLOR_G;
             this.b = EMPTY_SPACE_COLOR_B;
         }
         this.color = color(this.r, this.g, this.b, 1.0);
     }
-    update_appearance(dt, current_x, current_z, path_next_x, path_next_z){
-        if(this.x === path_next_x && this.y === path_next_z){ //set next grid in the path yellow and hide it so it does not block player
+    update_appearance(dt, current_x, current_z, path_next_x, path_next_z, isTracingPath) {
+        if(this.isStart && !this.isEnd){
+            this.color = START_COLOR;
+        }
+        else if (!this.isEnd && isTracingPath && this.x === path_next_x && this.y === path_next_z) { //set next grid in the path yellow and hide it so it does not block player
             this.r = PATH_COLOR_R;
             this.g = PATH_COLOR_G;
             this.b = PATH_COLOR_B;
             this.isShown = false;
         }
-        else if(this.x === current_x && this.y === current_z){ //current grid being visited by the algorithm
+        else if (!this.isEnd && this.x === current_x && this.y === current_z) { //current grid being visited by the algorithm
             this.color = VISITING_COLOR;
         }
-        else if(this.is_changing_color){ //visited grid color effect
+        else if (!this.isEnd && this.is_changing_color) { //visited grid color effect
             //starting color
-            if(!this.is_init_color_set){
+            if (!this.is_init_color_set) {
                 this.r = VISITED_INIT_COLOR_R;
                 this.g = VISITED_INIT_COLOR_G;
                 this.b = VISITED_INIT_COLOR_B;
@@ -110,31 +116,31 @@ class FinalCell {
             this.r = this.r - dt;
             this.b = this.b + dt;
             this.color = color(Math.max(this.r, 0), this.g, Math.min(this.b, 1.0), 1.0)
-            if(this.r <= 0 || this.b >=1.0){
+            if (this.r <= 0 || this.b >= 1.0) {
                 this.r = 0;
                 this.b = 1.0;
                 this.is_changing_color = false;
-            } 
+            }
         }
-        else{ //color remain unchanged
+        else { //color remain unchanged
             this.color = color(this.r, this.g, this.b, 1.0);
             this.isShown = true;
         }
 
-        if(this.isScaling){ //path scaling effect when tracing path  
+        if (this.isScaling) { //path scaling effect when tracing path  
             //set initial scale
-            if(!this.is_init_scale_set){
+            if (!this.is_init_scale_set) {
                 this.scale = INIT_SCALE;
             }
             this.is_init_scale_set = true;
-            this.scale = Math.min(this.scale+dt*this.scale_rate, MAX_SCALE);
-            if(this.scale >= MAX_SCALE){
+            this.scale = Math.min(this.scale + dt * this.scale_rate, MAX_SCALE);
+            if (this.scale >= MAX_SCALE) {
                 this.isScaling = false;
                 this.scale = MAX_SCALE;
             }
         }
     }
-    
+
 }
 
 class Board {
@@ -153,7 +159,7 @@ class Board {
     Based on: http://weblog.jamisbuck.org/2010/12/27/maze-generation-recursive-backtracking
     */
 
-    constructor(grid_width, grid_height){
+    constructor(grid_width, grid_height) {
         this.grid_width = grid_width; //grid_width  
         this.grid_height = grid_height; //grid_height 
         this.start_x = 0;; //starting grid x coordinate 
@@ -187,12 +193,16 @@ class Board {
 
     // method for checking if value is between min and max
     between(value, min, max) {
-        return value >= min && value <= max;    
+        return value >= min && value <= max;
     }
 
-    is_in_bound(x, z){
-        return this.between(x, 0, this.grid_width*2 - 1) && this.between(z, 0, this.grid_height*2 - 1);
-    } 
+    is_in_bound(x, z) {
+        return this.between(x, 0, this.grid_width * 2 - 1) && this.between(z, 0, this.grid_height * 2 - 1);
+    }
+
+    is_movable(x, z) {
+        return this.is_in_bound(x, z) && (!this.final_grid[z][x].iswall);
+    }
 
     // method for randomly shuffling an array
     shuf(array) {
@@ -236,10 +246,10 @@ class Board {
 
             // Make sure this direction hasn't been visited, and it's
             // on the board
-            if (this.between(ny, 0, this.grid.length-1)
+            if (this.between(ny, 0, this.grid.length - 1)
                 && this.between(nx, 0, this.grid[ny].length - 1)
                 && this.grid[ny][nx] == 0) {
-                
+
                 // Store direction to create maze
                 this.cell_array[cy][cx][direction] = true;
 
@@ -248,7 +258,7 @@ class Board {
                 this.carve_passage(nx, ny);
 
             }
-            
+
         })
     }
 
@@ -267,9 +277,9 @@ class Board {
         this.carve_passage(0, 0);
 
         // Initialize the final grid (2d array of wall/empty space)
-        for (let i = 0; i < this.grid_height*2; i++) {
+        for (let i = 0; i < this.grid_height * 2; i++) {
             this.final_grid[i] = new Array();
-            for (let j = 0; j < this.grid_width*2; j++) {
+            for (let j = 0; j < this.grid_width * 2; j++) {
                 this.final_grid[i][j] = new FinalCell(j, i);
             }
         }
@@ -289,10 +299,10 @@ class Board {
                 let right_cell = true;
                 let left_cell = true;
 
-                try { up_cell = this.cell_array[i-1][j].S } catch {}
-                try { down_cell = this.cell_array[i+1][j].N } catch {}
-                try { left_cell = this.cell_array[i][j-1].E } catch {}
-                try { right_cell = this.cell_array[i][j+1].W } catch {}
+                try { up_cell = this.cell_array[i - 1][j].S } catch { }
+                try { down_cell = this.cell_array[i + 1][j].N } catch { }
+                try { left_cell = this.cell_array[i][j - 1].E } catch { }
+                try { right_cell = this.cell_array[i][j + 1].W } catch { }
 
                 // Checking for wall between N of current cell, and S of 
                 // cell above current cell
@@ -321,34 +331,35 @@ class Board {
                     this.final_grid[final_grid_y][final_grid_x - 1].iswall = false;
                     this.final_grid[final_grid_y][final_grid_x].iswall = false;
                 }
-                
+
             }
         }
 
     }
 
-    init_player(){
-         //randomly place player 
-         let isPlayerPlaced = false;
-         while(!isPlayerPlaced){
+    init_player() {
+        //randomly place player 
+        let isPlayerPlaced = false;
+        while (!isPlayerPlaced) {
             let start_x = rand_int(0, this.grid_width);
             let start_z = rand_int(0, this.grid_height);
-            if(!this.final_grid[start_z][start_x].iswall && !this.final_grid[start_z][start_x].isEnd){
-               this.start_x = start_x;
-               this.start_z = start_z;
-               this.final_grid[start_z][start_x].isPlayer = true;
-               this.player = new Player(start_x, start_z, PLAYER_SCALE, PLAYER_POINT_TO, PLAYER_SPEED);
-               isPlayerPlaced = true;
+            if (!this.final_grid[start_z][start_x].iswall && !this.final_grid[start_z][start_x].isEnd) {
+                this.start_x = start_x;
+                this.start_z = start_z;
+                this.final_grid[start_z][start_x].isPlayer = true;
+                this.final_grid[this.start_z][this.start_x].isStart = true;
+                this.player = new Player(start_x, start_z, PLAYER_SCALE, PLAYER_POINT_TO, PLAYER_SPEED);
+                isPlayerPlaced = true;
             }
         }
     }
 
-    init_end(){
+    init_end() {
         let isEndPlaced = false;
-        while(!isEndPlaced){
+        while (!isEndPlaced) {
             let end_x = rand_int(0, this.grid_width);
             let end_z = rand_int(0, this.grid_height);
-            if(!this.final_grid[end_z][end_x].iswall && !this.final_grid[end_z][end_x].isPlayer){
+            if (!this.final_grid[end_z][end_x].iswall && !this.final_grid[end_z][end_x].isPlayer) {
                 this.end_x = end_x;
                 this.end_z = end_z;
                 this.final_grid[end_z][end_x].isEnd = true;
@@ -357,71 +368,120 @@ class Board {
         }
     }
 
-    init_grid_appearance(){
-        for (let i = 0; i < this.grid_height*2; i++) {
-            for (let j = 0; j < this.grid_width*2; j++) {
+    init_grid_appearance() {
+        for (let i = 0; i < this.grid_height * 2; i++) {
+            for (let j = 0; j < this.grid_width * 2; j++) {
                 this.final_grid[i][j].init_color();
             }
         }
     }
 
-    update_grid_appearance(dt){ //for searching alg visualization (color and scale)
-        for (let i = 0; i < this.grid_height*2; i++) {
-            for (let j = 0; j < this.grid_width*2; j++) {
-                this.final_grid[i][j].update_appearance(dt, this.current_x, this.current_z, this.path_next_x, this.path_next_z);
+    update_grid_appearance(dt) { //for searching alg visualization (color and scale)
+        for (let i = 0; i < this.grid_height * 2; i++) {
+            for (let j = 0; j < this.grid_width * 2; j++) {
+                this.final_grid[i][j].update_appearance(dt, this.current_x, this.current_z, this.path_next_x, this.path_next_z, this.isTracingPath);
             }
-        } 
+        }
     }
 
     //move player grid by grid one dir at a time
-    discrete_move_player(dt){
-        if(this.player.isMovingN){
-            this.player.N_off_set = Math.max(0, this.player.N_moving_distance - GRID_UNIT_LENGTH);//error correction
-            this.player.move_north(dt);
+    move_player(dx, dz) {
+        this.final_grid[this.player.grid_z][this.player.grid_x].isPlayer = false;
+        this.player.grid_x += dx;
+        this.player.grid_z += dz;
+        this.final_grid[this.player.grid_z][this.player.grid_x].isPlayer = true;
+        this.player.model_transform = get_model_translate_from_grid(this.player.grid_z, this.player.grid_x);//reset player position, make sure it is centered in that grid
+        //set the initial path array if the searching has not began
+        if(this.path.length === 1){
+            this.final_grid[this.start_z][this.start_x].isStart = false;
+            this.start_x += dx;
+            this.start_z += dz;
+            this.final_grid[this.start_z][this.start_x].isStart = true;
+            this.path_prev_x = this.start_x;
+            this.path_prev_z = this.start_z;
+            this.path_next_x = this.start_x;
+            this.path_next_z = this.start_z;
+            this.current_x = this.start_x; //searching alg current x 
+            this.current_z = this.start_z; //searching alg current y
+            this.path[0] = [' ', this.current_x, this.current_z];
         }
-        if(this.player.N_moving_distance >= GRID_UNIT_LENGTH){ 
-            this.player.isMovingN = false; //stop the movement 
+    }
+
+    discrete_move_player(dt) {
+        //moving N
+        if (this.player.isMovingN) {
+            if (this.is_movable(this.player.grid_x, this.player.grid_z - 1)) {
+                this.player.N_off_set = Math.max(0, this.player.N_moving_distance + dt * this.player.speed - GRID_UNIT_LENGTH);//error correction
+                this.player.move_north(dt);
+            } else {
+                this.player.isMovingN = false;
+            }
+        }
+        if (this.player.N_moving_distance >= GRID_UNIT_LENGTH) {
+            this.move_player(0, -1);
+            this.player.isMovingN = false; //stop the movement
             this.player.N_moving_distance = 0; //reset single movement distance
         }
-        if(this.player.isMovingS){
-            this.player.S_off_set = Math.max(0, this.player.S_moving_distance - GRID_UNIT_LENGTH);//error correction
-            this.player.move_south(dt);
+        //moving S
+        if (this.player.isMovingS) {
+            if (this.is_movable(this.player.grid_x, this.player.grid_z + 1)){
+                this.player.S_off_set = Math.max(0, this.player.S_moving_distance + dt * this.player.speed - GRID_UNIT_LENGTH);//error correction
+                this.player.move_south(dt);
+            }else{
+                this.player.isMovingS = false;
+            }
         }
-        if(this.player.S_moving_distance >= GRID_UNIT_LENGTH){ 
+        if (this.player.S_moving_distance >= GRID_UNIT_LENGTH) {
+            this.move_player(0, 1);
             this.player.isMovingS = false; //stop the movement 
             this.player.S_moving_distance = 0; //reset single movement distance
         }
-        if(this.player.isMovingE){
-            this.player.E_off_set = Math.max(0, this.player.E_moving_distance - GRID_UNIT_LENGTH);//error correction
-            this.player.move_east(dt);
+        //moving E
+        if (this.player.isMovingE) {
+            if(this.is_movable(this.player.grid_x + 1, this.player.grid_z)){
+                this.player.E_off_set = Math.max(0, this.player.E_moving_distance + dt * this.player.speed - GRID_UNIT_LENGTH);//error correction
+                this.player.move_east(dt);
+            }else{
+                this.player.isMovingE = false;
+            }
         }
-        if(this.player.E_moving_distance >= GRID_UNIT_LENGTH){ 
+        if (this.player.E_moving_distance >= GRID_UNIT_LENGTH) {
+            this.move_player(1, 0);
             this.player.isMovingE = false; //stop the movement 
             this.player.E_moving_distance = 0; //reset single movement distance
         }
-        if(this.player.isMovingW){
-            this.player.W_off_set = Math.max(0, this.player.W_moving_distance - GRID_UNIT_LENGTH);//error correction
-            this.player.move_west(dt);
+        //moving W
+        if (this.player.isMovingW) {
+            if(this.is_movable(this.player.grid_x - 1, this.player.grid_z)){
+                this.player.W_off_set = Math.max(0, this.player.W_moving_distance + dt * this.player.speed - GRID_UNIT_LENGTH);//error correction
+                this.player.move_west(dt);
+            }else{
+                this.player.isMovingW = false;
+            }
         }
-        if(this.player.W_moving_distance >= GRID_UNIT_LENGTH){ 
+        if (this.player.W_moving_distance >= GRID_UNIT_LENGTH) {
+            this.move_player(-1, 0);
             this.player.isMovingW = false; //stop the movement 
             this.player.W_moving_distance = 0; //reset single movement distance
         }
     }
 
     //implement search algorithm 
-    single_step_dfs(){
+    single_step_dfs() {
         let current_x = this.current_x;
         let current_z = this.current_z;
         this.final_grid[current_z][current_x].isVisited = true;
-        if(this.final_grid[current_z][current_x].isEnd){
+        if (this.final_grid[current_z][current_x].isEnd) {
+            //set the color of end cell when found, for now remain unchange  
+            this.final_grid[current_z][current_x].is_changing_color = false 
+
             this.isFoundEnd = true;
         }
-        else{
+        else {
             //try moving north
-            if(this.is_in_bound(current_x, current_z - 1) 
-            && !this.final_grid[current_z - 1][current_x].iswall
-            && !this.final_grid[current_z - 1][current_x].isVisited){//coord inbound and is not wall and is not visited 
+            if (this.is_in_bound(current_x, current_z - 1)
+                && !this.final_grid[current_z - 1][current_x].iswall
+                && !this.final_grid[current_z - 1][current_x].isVisited) {//coord inbound and is not wall and is not visited 
                 current_z--;
                 this.final_grid[current_z][current_x].isVisited = true;
                 this.final_grid[current_z][current_x].is_changing_color = true;
@@ -430,9 +490,9 @@ class Board {
                 this.current_z = current_z;
             }
             //try moving south
-            else if(this.is_in_bound(current_x, current_z + 1) 
-            && !this.final_grid[current_z + 1][current_x].iswall
-            && !this.final_grid[current_z + 1][current_x].isVisited){//coord inbound and is not wall and is not visited 
+            else if (this.is_in_bound(current_x, current_z + 1)
+                && !this.final_grid[current_z + 1][current_x].iswall
+                && !this.final_grid[current_z + 1][current_x].isVisited) {//coord inbound and is not wall and is not visited 
                 current_z++;
                 this.final_grid[current_z][current_x].isVisited = true;
                 this.final_grid[current_z][current_x].is_changing_color = true;
@@ -441,9 +501,9 @@ class Board {
                 this.current_z = current_z;
             }
             //try moving west
-            else if(this.is_in_bound(current_x - 1, current_z) 
-            && !this.final_grid[current_z][current_x - 1].iswall
-            && !this.final_grid[current_z][current_x - 1].isVisited){//coord inbound and is not wall and is not visited 
+            else if (this.is_in_bound(current_x - 1, current_z)
+                && !this.final_grid[current_z][current_x - 1].iswall
+                && !this.final_grid[current_z][current_x - 1].isVisited) {//coord inbound and is not wall and is not visited 
                 current_x--;
                 this.final_grid[current_z][current_x].isVisited = true;
                 this.final_grid[current_z][current_x].is_changing_color = true;
@@ -452,9 +512,9 @@ class Board {
                 this.current_z = current_z;
             }
             //try moving east
-            else if(this.is_in_bound(current_x + 1, current_z) 
-            && !this.final_grid[current_z][current_x + 1].iswall
-            && !this.final_grid[current_z][current_x + 1].isVisited){//coord inbound and is not wall and is not visited 
+            else if (this.is_in_bound(current_x + 1, current_z)
+                && !this.final_grid[current_z][current_x + 1].iswall
+                && !this.final_grid[current_z][current_x + 1].isVisited) {//coord inbound and is not wall and is not visited 
                 current_x++;
                 this.final_grid[current_z][current_x].isVisited = true;
                 this.final_grid[current_z][current_x].is_changing_color = true;
@@ -462,40 +522,40 @@ class Board {
                 this.current_x = current_x;
                 this.current_z = current_z;
             }
-            else{ //trace back
+            else { //trace back
                 this.path.pop();
                 this.current_x = this.path[this.path.length - 1][1];
-                this.current_z = this.path[this.path.length - 1][2]; 
+                this.current_z = this.path[this.path.length - 1][2];
             }
-        } 
+        }
     }
-    bfs(){}
+    bfs() { }
 
-    single_step_trace_path(){
-        this.final_grid[this.start_z][this.start_x].isPlayer = false; //now player no longer stays here 
-        if(this.path_index >= this.path.length){
+    single_step_trace_path() {
+        //this.final_grid[this.start_z][this.start_x].isPlayer = false; //now player no longer stays here 
+        if (this.path_index >= this.path.length) {
             this.isTracingPath = false;
-        }else{
+        } else {
             let moving_direction = this.path[this.path_index][0];
             this.path_next_x = this.path[this.path_index][1];
             this.path_next_z = this.path[this.path_index][2];
             this.path_prev_x = this.path[this.path_index - 1][1];
-            this.path_prev_z = this.path[this.path_index - 1][2]; 
+            this.path_prev_z = this.path[this.path_index - 1][2];
             this.final_grid[this.path_prev_z][this.path_prev_x].isScaling = true;
-            switch(moving_direction){
+            switch (moving_direction) {
                 case 'N': this.player.isMovingN = true;
-                          break;
+                    break;
                 case 'S': this.player.isMovingS = true;
-                          break;
+                    break;
                 case 'W': this.player.isMovingW = true;
-                          break;
+                    break;
                 case 'E': this.player.isMovingE = true;
-                          break;
+                    break;
             }
         }
-        
+
     }
 
 }
 
-export {Board};
+export { Board };
