@@ -376,6 +376,7 @@ class Board {
     //move player grid by grid one dir at a time
     discrete_move_player(dt){
         if(this.player.isMovingN){
+            this.player.N_off_set = Math.max(0, this.player.N_moving_distance - GRID_UNIT_LENGTH);//error correction
             this.player.move_north(dt);
         }
         if(this.player.N_moving_distance >= GRID_UNIT_LENGTH){ 
@@ -383,6 +384,7 @@ class Board {
             this.player.N_moving_distance = 0; //reset single movement distance
         }
         if(this.player.isMovingS){
+            this.player.S_off_set = Math.max(0, this.player.S_moving_distance - GRID_UNIT_LENGTH);//error correction
             this.player.move_south(dt);
         }
         if(this.player.S_moving_distance >= GRID_UNIT_LENGTH){ 
@@ -390,6 +392,7 @@ class Board {
             this.player.S_moving_distance = 0; //reset single movement distance
         }
         if(this.player.isMovingE){
+            this.player.E_off_set = Math.max(0, this.player.E_moving_distance - GRID_UNIT_LENGTH);//error correction
             this.player.move_east(dt);
         }
         if(this.player.E_moving_distance >= GRID_UNIT_LENGTH){ 
@@ -397,6 +400,7 @@ class Board {
             this.player.E_moving_distance = 0; //reset single movement distance
         }
         if(this.player.isMovingW){
+            this.player.W_off_set = Math.max(0, this.player.W_moving_distance - GRID_UNIT_LENGTH);//error correction
             this.player.move_west(dt);
         }
         if(this.player.W_moving_distance >= GRID_UNIT_LENGTH){ 

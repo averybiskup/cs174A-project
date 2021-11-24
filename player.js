@@ -31,7 +31,13 @@ const {
         this.N_moving_distance = 0.0;
         this.S_moving_distance = 0.0;  
         this.W_moving_distance = 0.0;  
-        this.E_moving_distance = 0.0;    
+        this.E_moving_distance = 0.0;
+        
+        //off-set for discrete movement error correction
+        this.N_off_set = 0;
+        this.S_off_set = 0;
+        this.W_off_set = 0;
+        this.E_off_set = 0;
     }
 
     //implement movement of player for automated path finding algorithm.
@@ -39,25 +45,25 @@ const {
         this.point_to = Math.PI;
         this.N_moving_distance += dt*this.speed*this.scale;
         this.N_dt += dt;
-        this.model_transform = this.model_transform.times(Mat4.translation(0, 0, -dt*this.speed));
+        this.model_transform = this.model_transform.times(Mat4.translation(0, 0, -dt*this.speed + this.N_off_set));
     }
     move_south(dt){
         this.point_to = 0;
         this.S_moving_distance += dt*this.speed*this.scale;
         this.S_dt += dt;
-        this.model_transform = this.model_transform.times(Mat4.translation(0, 0, dt*this.speed));
+        this.model_transform = this.model_transform.times(Mat4.translation(0, 0, dt*this.speed - this.S_off_set));
     }
     move_west(dt){
         this.point_to = 3/2*Math.PI;
         this.W_moving_distance += dt*this.speed*this.scale;
         this.W_dt += dt;
-        this.model_transform = this.model_transform.times(Mat4.translation(-dt*this.speed, 0, 0));
+        this.model_transform = this.model_transform.times(Mat4.translation(-dt*this.speed + this.W_off_set, 0, 0));
     }
     move_east(dt){
         this.point_to = Math.PI/2;
         this.E_moving_distance += dt*this.speed*this.scale;
         this.E_dt += dt;
-        this.model_transform = this.model_transform.times(Mat4.translation(dt*this.speed, 0, 0));
+        this.model_transform = this.model_transform.times(Mat4.translation(dt*this.speed - this.E_off_set, 0, 0));
     }
 
     is_moving(){
