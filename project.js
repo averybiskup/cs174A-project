@@ -39,6 +39,8 @@ class Base_Scene extends Scene {
                 {ambient: .8, diffusivity: .6, color: hex_color('#ff9c8c')}),
         };
 
+        this.animation_queue = [];
+
         this.board_width = 21;
         this.board_height = 21;
         // The white material and basic shader are used for drawing the outline.
@@ -69,6 +71,33 @@ class Base_Scene extends Scene {
         this.shapes.boarder.draw(context, program_state, model_transform, this.materials.grey_plastic);
     }
 
+    my_mouse_down(e, pos, context, program_state) {
+        let pos_ndc_near = vec4(pos[0], pos[1], -1.0, 1.0);
+        let pos_ndc_far  = vec4(pos[0], pos[1],  1.0, 1.0);
+        let center_ndc_near = vec4(0.0, 0.0, -1.0, 1.0);
+        let P = program_state.projection_transform;
+        let V = program_state.camera_inverse;
+        let pos_world_near = Mat4.inverse(P.times(V)).times(pos_ndc_near);
+        let pos_world_far  = Mat4.inverse(P.times(V)).times(pos_ndc_far);
+        let center_world_near  = Mat4.inverse(P.times(V)).times(center_ndc_near);
+        pos_world_near.scale_by(1 / pos_world_near[3]);
+        pos_world_far.scale_by(1 / pos_world_far[3]);
+        center_world_near.scale_by(1 / center_world_near[3]);
+        //console.log(pos_world_near);
+        //console.log(pos_world_far);
+        //
+        // Do whatever you want
+        let animation_bullet = {
+            from: center_world_near,
+            to: pos_world_far,
+            start_time: program_state.animation_time,
+            end_time: program_state.animation_time + 5000,
+            more_info: "add gravity"
+        }
+
+        this.animation_queue.push(animation_bullet)
+    }
+
     display(context, program_state) {
         // display():  Called once per frame of animation. Here, the base class's display only does
         // some initial setup.
@@ -82,8 +111,24 @@ class Base_Scene extends Scene {
         program_state.projection_transform = Mat4.perspective(
             Math.PI / 4, context.width / context.height, 1, 200);
 
+        let canvas = context.canvas;
+        const mouse_position = (e, rect = canvas.getBoundingClientRect()) =>
+            vec((e.clientX - (rect.left + rect.right) / 2) / ((rect.right - rect.left) / 2),
+                (e.clientY - (rect.bottom + rect.top) / 2) / ((rect.top - rect.bottom) / 2));
+
+        canvas.addEventListener("mousedown", e => {
+            e.preventDefault();
+            const rect = canvas.getBoundingClientRect()
+            console.log("e.clientX: " + e.clientX);
+            console.log("e.clientX - rect.left: " + (e.clientX - rect.left));
+            console.log("e.clientY: " + e.clientY);
+            console.log("e.clientY - rect.top: " + (e.clientY - rect.top));
+            console.log("mouse_position(e): " + mouse_position(e));
+            this.my_mouse_down(e, mouse_position(e), context, program_state);
+        });
+
         // *** Lights: *** Values of vector or point lights.
-        const light_position = vec4(10, 10, 10, 1);
+        const light_position = vec4(10, 10, 50, 1);
         program_state.lights = [new Light(light_position, color(1, 1, 1, 1), 1000)];
         this.draw_maze_ground(context, program_state);
         this.draw_maze_boarder(context, program_state, this.board_width*2, this.board_height*2); //draw a 40 x 30 area on x-z plane
@@ -135,14 +180,16 @@ export class Project extends Base_Scene {
                 if (maze[i][j].iswall) { //draw wall
                     model_transform = get_model_transform_from_grid(i, j);
                     this.shapes.cube.draw(context, program_state, model_transform, this.materials.grey_plastic.override({color: maze[i][j].color}));
-                } else if(maze[i][j].isEnd) { //draw end 
-                    model_transform = get_model_transform_from_grid(i, j);
-                    this.shapes.sphere.draw(context, program_state, model_transform, this.materials.grey_plastic.override({color: maze[i][j].color}));
-                } else if(!maze[i][j].isPlayer && maze[i][j].isShown){
+                }
+                else {
                     model_transform = get_model_transform_from_grid(i, j);
                     let scale = maze[i][j].scale;
-                    model_transform = model_transform.times(Mat4.scale(scale, scale, scale));
+                    model_transform = model_transform.times(Mat4.scale(scale, 0.01, scale)).times(Mat4.translation(0, -100, 0));
                     this.shapes.cube.draw(context, program_state, model_transform, this.materials.white_plastic.override({color: maze[i][j].color}));
+                }
+                if(maze[i][j].isEnd) { //draw end 
+                    model_transform = get_model_transform_from_grid(i, j);
+                    this.shapes.sphere.draw(context, program_state, model_transform, this.materials.grey_plastic.override({color: maze[i][j].color}));
                 }
             }
         }
