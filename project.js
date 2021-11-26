@@ -108,6 +108,11 @@ export class Project extends Base_Scene {
 
     }
 
+    resetBoard() {
+        this.board = new Board(this.board_width/2, this.board_height/2);    
+        console.log('test')
+    }
+
     make_control_panel() {
 
         // Draw the scene's buttons, setup their actions and keyboard shortcuts, and monitor live measurements.
@@ -119,6 +124,9 @@ export class Project extends Base_Scene {
         this.key_triggered_button("Move 1 grid E", ["l"], () => this.board.player.isMovingE = true);
 
         this.key_triggered_button("Run DFS", ['x'], () => this.board.isRunningDFS = true); //visualize dfs
+        
+        // Restart algorithm
+        this.key_triggered_button("Reset", ['x'], () => this.resetBoard() ); //visualize dfs
     }
 
     display(context, program_state) {
@@ -126,7 +134,7 @@ export class Project extends Base_Scene {
         //draw the maze contents according to board(see definition in board.js) (needs to be replaced later)
         let t = program_state.animation_time / 1000;
         let dt = program_state.animation_delta_time / 1000;
-        
+
         //draw maze 
         let model_transform = Mat4.identity();
         for(let i = 0; i < this.board.final_grid.length; i++){
