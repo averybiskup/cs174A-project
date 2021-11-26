@@ -105,12 +105,16 @@ export class Project extends Base_Scene {
         this.board = new Board(this.board_width/2, 
                                this.board_height/2);
         this.time_counter = 0;
-
+        this.drawing_board = true;
+        this.current_x = 0;
+        this.current_y = 0;
     }
 
     resetBoard() {
         this.board = new Board(this.board_width/2, this.board_height/2);    
-        console.log('test')
+        this.current_x = 0;
+        this.current_y = 0;
+        this.drawing_board = true;
     }
 
     make_control_panel() {
@@ -129,35 +133,55 @@ export class Project extends Base_Scene {
         this.key_triggered_button("Reset", ['x'], () => this.resetBoard() ); //visualize dfs
     }
 
+    draw_board_object(context, program_state, model_transform, i, j) {
+        const maze = this.board.final_grid
+        if (maze[i][j].iswall) { //draw wall
+            model_transform = get_model_translate_from_grid(i, j);
+            let scale = maze[i][j].scale;
+            model_transform = model_transform.times(Mat4.scale(scale, scale, scale));
+            this.shapes.cube.draw(context, program_state, model_transform, this.materials.grey_plastic.override({color: maze[i][j].color}));
+        } else if(maze[i][j].isEnd) { //draw end 
+            model_transform = get_model_translate_from_grid(i, j);
+            let scale = maze[i][j].scale;
+            model_transform = model_transform.times(Mat4.scale(scale, scale, scale));
+            this.shapes.sphere.draw(context, program_state, model_transform, this.materials.grey_plastic.override({color: maze[i][j].color}));
+        } else if(!maze[i][j].isPlayer && maze[i][j].isShown){
+            model_transform = get_model_translate_from_grid(i, j);
+            let scale = maze[i][j].scale;
+            model_transform = model_transform.times(Mat4.scale(scale, scale, scale));
+            this.shapes.cube.draw(context, program_state, model_transform, this.materials.white_plastic.override({color: maze[i][j].color}));
+        }
+    }
+
     display(context, program_state) {
         super.display(context, program_state);
         //draw the maze contents according to board(see definition in board.js) (needs to be replaced later)
         let t = program_state.animation_time / 1000;
         let dt = program_state.animation_delta_time / 1000;
 
-        //draw maze 
         let model_transform = Mat4.identity();
-        for(let i = 0; i < this.board.final_grid.length; i++){
-            for(let j = 0; j < this.board.final_grid[0].length; j++){
-                let maze = this.board.final_grid;
-                if (maze[i][j].iswall) { //draw wall
-                    model_transform = get_model_translate_from_grid(i, j);
-                    let scale = maze[i][j].scale;
-                    model_transform = model_transform.times(Mat4.scale(scale, scale, scale));
-                    this.shapes.cube.draw(context, program_state, model_transform, this.materials.grey_plastic.override({color: maze[i][j].color}));
-                } else if(maze[i][j].isEnd) { //draw end 
-                    model_transform = get_model_translate_from_grid(i, j);
-                    let scale = maze[i][j].scale;
-                    model_transform = model_transform.times(Mat4.scale(scale, scale, scale));
-                    this.shapes.sphere.draw(context, program_state, model_transform, this.materials.grey_plastic.override({color: maze[i][j].color}));
-                } else if(!maze[i][j].isPlayer && maze[i][j].isShown){
-                    model_transform = get_model_translate_from_grid(i, j);
-                    let scale = maze[i][j].scale;
-                    model_transform = model_transform.times(Mat4.scale(scale, scale, scale));
-                    this.shapes.cube.draw(context, program_state, model_transform, this.materials.white_plastic.override({color: maze[i][j].color}));
-                }
+
+        // Drawing board
+        if (this.drawing_board === true) {
+            if (this.current_y < this.board.final_grid.length) {
+                this.current_x += 1;
+                this.current_y += 1;
+            } else if (this.current_x < this.board.final_grid[0].length) {
+                this.current_x += 1;
+                this.current_y += 1;
+            } else {
+                this.drawing_board = false;    
             }
         }
+
+        // Drawing each cube
+        for (let i = 0; i < this.current_y; i++) {
+            for (let j = 0; j < this.current_x; j++) {
+                this.draw_board_object(context, program_state, model_transform, i, j);
+            }
+            
+        }
+
         //run searching algorithm
         if(this.board.isRunningDFS){
             this.time_counter += dt;
