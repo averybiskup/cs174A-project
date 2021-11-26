@@ -117,6 +117,19 @@ export class Project extends Base_Scene {
         this.drawing_board = true;
     }
 
+    resetX(value) {
+        this.board_width += value;
+        this.board.grid_width += value;
+        this.resetBoard();
+        console.log(this.board.final_grid)
+    }
+
+    resetY(value) {
+        this.board.grid_height += value;
+        this.board_height += value;
+        this.resetBoard();
+    }
+
     make_control_panel() {
 
         // Draw the scene's buttons, setup their actions and keyboard shortcuts, and monitor live measurements.
@@ -131,6 +144,11 @@ export class Project extends Base_Scene {
         
         // Restart algorithm
         this.key_triggered_button("Reset", ['x'], () => this.resetBoard() ); //visualize dfs
+
+        this.key_triggered_button("Decrease x", ['<'], () => this.resetX(-1) ); //visualize dfs
+        this.key_triggered_button("Increase x", ['>'], () => this.resetX(1) ); //visualize dfs
+        this.key_triggered_button("Decrease y", ['-'], () => this.resetY(-1) ); //visualize dfs
+        this.key_triggered_button("Increase y", ['+'], () => this.resetY(1) ); //visualize dfs
     }
 
     draw_board_object(context, program_state, model_transform, i, j) {
@@ -164,12 +182,12 @@ export class Project extends Base_Scene {
         // Drawing board
         if (this.drawing_board === true) {
             if (this.current_y < this.board.final_grid.length) {
-                this.current_x += 1;
                 this.current_y += 1;
-            } else if (this.current_x < this.board.final_grid[0].length) {
+            } 
+            if (this.current_x < this.board.final_grid[0].length) {
                 this.current_x += 1;
-                this.current_y += 1;
-            } else {
+            } 
+            if (this.current_x === this.board.final_grid[0].length && this.current_y === this.board.final_grid.length) {
                 this.drawing_board = false;    
             }
         }
