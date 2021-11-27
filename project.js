@@ -77,7 +77,8 @@ class Base_Scene extends Scene {
         if (!context.scratchpad.controls) {
             this.children.push(context.scratchpad.controls = new defs.Movement_Controls());
             // Define the global camera and projection matrices, which are stored in program_state.
-            program_state.set_camera(Mat4.look_at(vec3(20, 40, 30), vec3(20, 0, 10), vec3(0, 1, 0)));
+            program_state.set_camera(Mat4.look_at(vec3(20, 70, 15), vec3(20, -50, 25), vec3(0, 1, 0)));
+
         }
         program_state.projection_transform = Mat4.perspective(
             Math.PI / 4, context.width / context.height, 1, 200);
@@ -105,7 +106,36 @@ export class Project extends Base_Scene {
         this.board = new Board(this.board_width/2, 
                                this.board_height/2);
         this.time_counter = 0;
+        this.drawing_board = true;
+        this.current_x = 0;
+        this.current_y = 0;
+        this.camera_angle = 'side';
+    }
 
+    // Regenerating maze
+    resetBoard() {
+        this.board = new Board(this.board_width/2, this.board_height/2);    
+        this.current_x = 0;
+        this.current_y = 0;
+        this.drawing_board = true;
+    }
+
+    // Resetting x size of board
+    resetX(value) {
+        if (this.board_width >= 5 && this.board_width <= 40) {
+            this.board_width += value;
+            this.board.grid_width += value;
+            this.resetBoard();
+        }
+    }
+
+    // Resetting y size of board
+    resetY(value) {
+        if (this.board_height >= 5 && this.board_height <= 40) {
+            this.board.grid_height += value;
+            this.board_height += value;
+            this.resetBoard();
+        }
     }
 
     make_control_panel() {
@@ -119,6 +149,38 @@ export class Project extends Base_Scene {
         this.key_triggered_button("Move 1 grid E", ["l"], () => this.board.player.isMovingE = true);
 
         this.key_triggered_button("Run DFS", ['x'], () => this.board.isRunningDFS = true); //visualize dfs
+        
+        // Restart algorithm
+        this.key_triggered_button("Reset", ['x'], () => this.resetBoard() ); //visualize dfs
+
+        this.key_triggered_button("Decrease x", ['<'], () => this.resetX(-2) ); //visualize dfs
+        this.key_triggered_button("Increase x", ['>'], () => this.resetX(2) ); //visualize dfs
+        this.key_triggered_button("Decrease y", ['-'], () => this.resetY(-2) ); //visualize dfs
+        this.key_triggered_button("Increase y", ['+'], () => this.resetY(2) ); //visualize dfs
+
+        this.key_triggered_button("Birds View", ['b'], () => this.camera_angle = 'bird' ); //visualize dfs
+        this.key_triggered_button("Side View", ['.'], () => this.camera_angle = 'side' ); //visualize dfs
+        this.key_triggered_button("Follow", ['c'], () => this.camera_angle = 'follow' ); //visualize dfs
+    }
+
+    draw_board_object(context, program_state, model_transform, i, j) {
+        const maze = this.board.final_grid
+        if (maze[i][j].iswall) { //draw wall
+            model_transform = get_model_translate_from_grid(i, j);
+            let scale = maze[i][j].scale;
+            model_transform = model_transform.times(Mat4.scale(scale, scale, scale));
+            this.shapes.cube.draw(context, program_state, model_transform, this.materials.grey_plastic.override({color: maze[i][j].color}));
+        } else if(maze[i][j].isEnd) { //draw end 
+            model_transform = get_model_translate_from_grid(i, j);
+            let scale = maze[i][j].scale;
+            model_transform = model_transform.times(Mat4.scale(scale, scale, scale));
+            this.shapes.sphere.draw(context, program_state, model_transform, this.materials.grey_plastic.override({color: maze[i][j].color}));
+        } else if(!maze[i][j].isPlayer && maze[i][j].isShown){
+            model_transform = get_model_translate_from_grid(i, j);
+            let scale = maze[i][j].scale;
+            model_transform = model_transform.times(Mat4.scale(scale, scale, scale));
+            this.shapes.cube.draw(context, program_state, model_transform, this.materials.white_plastic.override({color: maze[i][j].color}));
+        }
     }
 
     display(context, program_state) {
@@ -126,30 +188,30 @@ export class Project extends Base_Scene {
         //draw the maze contents according to board(see definition in board.js) (needs to be replaced later)
         let t = program_state.animation_time / 1000;
         let dt = program_state.animation_delta_time / 1000;
-        
-        //draw maze 
+
         let model_transform = Mat4.identity();
-        for(let i = 0; i < this.board.final_grid.length; i++){
-            for(let j = 0; j < this.board.final_grid[0].length; j++){
-                let maze = this.board.final_grid;
-                if (maze[i][j].iswall) { //draw wall
-                    model_transform = get_model_translate_from_grid(i, j);
-                    let scale = maze[i][j].scale;
-                    model_transform = model_transform.times(Mat4.scale(scale, scale, scale));
-                    this.shapes.cube.draw(context, program_state, model_transform, this.materials.grey_plastic.override({color: maze[i][j].color}));
-                } else if(maze[i][j].isEnd) { //draw end 
-                    model_transform = get_model_translate_from_grid(i, j);
-                    let scale = maze[i][j].scale;
-                    model_transform = model_transform.times(Mat4.scale(scale, scale, scale));
-                    this.shapes.sphere.draw(context, program_state, model_transform, this.materials.grey_plastic.override({color: maze[i][j].color}));
-                } else if(!maze[i][j].isPlayer && maze[i][j].isShown){
-                    model_transform = get_model_translate_from_grid(i, j);
-                    let scale = maze[i][j].scale;
-                    model_transform = model_transform.times(Mat4.scale(scale, scale, scale));
-                    this.shapes.cube.draw(context, program_state, model_transform, this.materials.white_plastic.override({color: maze[i][j].color}));
-                }
+
+        // Drawing board
+        if (this.drawing_board === true) {
+            if (this.current_y < this.board.final_grid.length) {
+                this.current_y += 1;
+            } 
+            if (this.current_x < this.board.final_grid[0].length) {
+                this.current_x += 1;
+            } 
+            if (this.current_x === this.board.final_grid[0].length && this.current_y === this.board.final_grid.length) {
+                this.drawing_board = false;    
             }
         }
+
+        // Drawing each cube
+        for (let i = 0; i < this.current_y; i++) {
+            for (let j = 0; j < this.current_x; j++) {
+                this.draw_board_object(context, program_state, model_transform, i, j);
+            }
+            
+        }
+
         //run searching algorithm
         if(this.board.isRunningDFS){
             this.time_counter += dt;
@@ -166,6 +228,7 @@ export class Project extends Base_Scene {
                 this.time_counter = 0;
             }
         }
+
         //trace path 
         if(this.board.isTracingPath && !this.board.player.is_moving()){
             this.board.single_step_trace_path();
@@ -177,5 +240,31 @@ export class Project extends Base_Scene {
         model_transform = (this.board.player.model_transform).times(Mat4.rotation(this.board.player.point_to, 0, 1, 0))
                                                              .times(Mat4.scale(this.board.player.scale, this.board.player.scale, this.board.player.scale));
         this.shapes.player.draw(context, program_state, model_transform, this.materials.plane);
+
+        const birds_eye_x = 20;
+        const birds_eye_y = 80 + (this.board.grid_width * 2) + (this.board.grid_height * 2) - 40;
+        const birds_eye_z = 30; 
+
+        const side_view_x = 20;
+        const side_view_y = 30;
+        const side_view_z = 80 + (this.board.grid_width * 2) + (this.board.grid_height * 2) - 40;;
+
+        let desired;
+        switch (this.camera_angle) {
+            case 'bird':
+                desired = Mat4.look_at(vec3(birds_eye_x, birds_eye_y, birds_eye_z), vec3(20, 0, 25), vec3(0, 1, 0));
+                break;
+            case 'follow':
+                desired = Mat4.inverse(model_transform.times(Mat4.rotation(this.board.player.point_to * -1, 0, 1, 0)).times(Mat4.rotation(-1 * (Math.PI/2), 1, 0, 0)).times(Mat4.translation(0, 0, 30)));
+                break;
+            default:
+                desired = Mat4.look_at(vec3(side_view_x, side_view_y, side_view_z), vec3(20, 0, 25), vec3(0, 1, 0));
+                break;
+        }
+
+        desired = desired.map((x, i) => Vector.from(program_state.camera_inverse[i]).mix(x, 0.1));
+
+        program_state.set_camera(desired);
+
     }
 }
