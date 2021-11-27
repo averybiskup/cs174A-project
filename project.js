@@ -109,10 +109,10 @@ export class Project extends Base_Scene {
         this.drawing_board = true;
         this.current_x = 0;
         this.current_y = 0;
-        this.birds_eye = false;
         this.camera_angle = 'side';
     }
 
+    // Regenerating maze
     resetBoard() {
         this.board = new Board(this.board_width/2, this.board_height/2);    
         this.current_x = 0;
@@ -120,17 +120,22 @@ export class Project extends Base_Scene {
         this.drawing_board = true;
     }
 
+    // Resetting x size of board
     resetX(value) {
-        this.board_width += value;
-        this.board.grid_width += value;
-        this.resetBoard();
-        console.log(this.board.final_grid)
+        if (this.board_width >= 5 && this.board_width <= 40) {
+            this.board_width += value;
+            this.board.grid_width += value;
+            this.resetBoard();
+        }
     }
 
+    // Resetting y size of board
     resetY(value) {
-        this.board.grid_height += value;
-        this.board_height += value;
-        this.resetBoard();
+        if (this.board_height >= 5 && this.board_height <= 40) {
+            this.board.grid_height += value;
+            this.board_height += value;
+            this.resetBoard();
+        }
     }
 
     make_control_panel() {
