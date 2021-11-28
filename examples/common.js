@@ -163,7 +163,7 @@ const Cube_Outline = defs.Cube_Outline =
                 [-1, -1, -1], [1, -1, -1], [1, -1, -1], [1, 1, -1], [1, 1, -1], [-1, 1, -1], [-1, 1, -1], [-1, -1, -1],
                 [-1, -1, -1], [-1, -1, 1], [1, -1, -1], [1, -1, 1], [1, 1, -1], [1, 1, 1], [-1, 1, -1], [-1, 1, 1],
                 [-1, -1, 1], [1, -1, 1], [1, -1, 1], [1, 1, 1], [1, 1, 1], [-1, 1, 1], [-1, 1, 1], [-1, -1, 1]);
-            const white = vec4(1, 1, 0, 1); //default outline is white 
+            const white = vec4(1, 1, 1, 1); //default outline is white 
             this.arrays.color = Vector3.cast(
                 white, white, white, white, white, white, white, white,
                 white, white, white, white, white, white, white, white,
