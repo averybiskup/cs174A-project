@@ -155,6 +155,30 @@ const Cube = defs.Cube =
         }
     }
 
+const Cube_Outline = defs.Cube_Outline =
+    class Cube_Outline extends Shape {
+        constructor() {
+            super("position", "color");
+            this.arrays.position = Vector3.cast(
+                [-1, -1, -1], [1, -1, -1], [1, -1, -1], [1, 1, -1], [1, 1, -1], [-1, 1, -1], [-1, 1, -1], [-1, -1, -1],
+                [-1, -1, -1], [-1, -1, 1], [1, -1, -1], [1, -1, 1], [1, 1, -1], [1, 1, 1], [-1, 1, -1], [-1, 1, 1],
+                [-1, -1, 1], [1, -1, 1], [1, -1, 1], [1, 1, 1], [1, 1, 1], [-1, 1, 1], [-1, 1, 1], [-1, -1, 1]);
+            const white = vec4(1, 1, 0, 1); //default outline is white 
+            this.arrays.color = Vector3.cast(
+                white, white, white, white, white, white, white, white,
+                white, white, white, white, white, white, white, white,
+                white, white, white, white, white, white, white, white);
+            this.indices = false;
+        }
+
+        update_outline_color(color){
+            this.arrays.color = Vector3.cast(
+                color, color, color, color, color, color, color, color,
+                color, color, color, color, color, color, color, color,
+                color, color, color, color, color, color, color, color);
+        }
+}
+
 const Player = defs.Player =
     class Player extends Shape {
         // **Cube** A closed 3D shape, and the first example of a compound shape (a Shape constructed
