@@ -7,7 +7,7 @@ const {
 
 //individual paricle
 class Particle{
-    constructor(shape, material, life, velocity, color, scale, model_tranform){
+    constructor(shape, material, life, velocity, color, scale, euclidian_model_tranform){
         this.shape = shape; //shape, could be square, cube sphere etc.
         this.material = material;// material of the particle
         this.age = 0;//age of this particle
@@ -15,7 +15,7 @@ class Particle{
         this.life = life; //lifespan of the particle 
         this.scale = scale;
         this.color = color; //color of the particle; vec4 normalized rgb
-        this.euclidian_model_tranform = model_tranform; //store the 'position and orientation of the particle'
+        this.euclidian_model_tranform = euclidian_model_tranform; //store the 'position and orientation of the particle'
     }
 
     is_dead(){
@@ -47,8 +47,8 @@ class Particle{
 }
 
 class Outline_Particle extends Particle{//special kind of particle: only consists of outlines 
-    constructor(shape, material, life, velocity, color, scale, model_tranform){
-        super(shape, material, life, velocity, color, scale, model_tranform);
+    constructor(shape, material, life, velocity, color, scale, euclidian_model_tranform){
+        super(shape, material, life, velocity, color, scale, euclidian_model_tranform);
     }
 
     render(context, program_state){
@@ -84,7 +84,7 @@ class Particles_Emitter{
         return this.particles.length === 0;
     }
 
-    add_particles(model_tranform){
+    add_particles(euclidian_model_tranform){
         //add random number of particles to render queue
         let add_particles_count = rand_int(0, Math.max(2, this.max_spawn_rate));
         for(let i = 0; i<add_particles_count; i++){
@@ -104,7 +104,7 @@ class Particles_Emitter{
                                                 vec3(x_velocity, y_velocity, z_velocity),
                                                 this.particle_color,
                                                 this.particle_scale,
-                                                 model_tranform));
+                                                euclidian_model_tranform));
             }else{
                 this.particles.push(new Particle(this.shapes.cube, 
                                                 this.materials.white_plastic,
@@ -112,7 +112,7 @@ class Particles_Emitter{
                                                 vec3(x_velocity, y_velocity, z_velocity),
                                                 this.particle_color,
                                                 this.particle_scale,
-                                                model_tranform));
+                                                euclidian_model_tranform));
             }
         }
     }
