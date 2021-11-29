@@ -95,7 +95,21 @@ class Base_Scene extends Scene {
             more_info: "add gravity"
         }
 
-        this.animation_queue.push(animation_bullet)
+//         this.animation_queue.push(animation_bullet);
+
+//         var x = e.clientX;
+//         var y = e.clientY;
+//         var rect = context.canvas.getBoundingClientRect();
+
+//         x = x - rect.left;
+//         y = rect.bottom - y;
+    
+//         var gl = context.canvas.getContext("webgl");
+
+//         var pixel = new Uint8Array(4);
+//         gl.readPixels(x, y, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, pixel);
+//         console.log("x: " + x + " y: " + y);
+//         console.log("picked: " + pixel);
     }
 
     display(context, program_state) {
@@ -119,12 +133,14 @@ class Base_Scene extends Scene {
         canvas.addEventListener("mousedown", e => {
             e.preventDefault();
             const rect = canvas.getBoundingClientRect()
+            /*
             console.log("e.clientX: " + e.clientX);
             console.log("e.clientX - rect.left: " + (e.clientX - rect.left));
             console.log("e.clientY: " + e.clientY);
             console.log("e.clientY - rect.top: " + (e.clientY - rect.top));
             console.log("mouse_position(e): " + mouse_position(e));
-            this.my_mouse_down(e, mouse_position(e), context, program_state);
+            */
+            //this.my_mouse_down(e, mouse_position(e), context, program_state);
         });
 
         // *** Lights: *** Values of vector or point lights.
@@ -219,5 +235,23 @@ export class Project extends Base_Scene {
         this.board.discrete_move_player(dt);
         model_transform = (this.board.player.model_transform).times(Mat4.rotation(this.board.player.point_to, 0, 1, 0));
         this.shapes.player.draw(context, program_state, model_transform, this.materials.plane);
+        
+        const mouse_position = (e, rect = canvas.getBoundingClientRect()) =>
+            vec((e.clientX - (rect.left + rect.right) / 2) / ((rect.right - rect.left) / 2),
+                (e.clientY - (rect.bottom + rect.top) / 2) / ((rect.top - rect.bottom) / 2));
+                
+        var x = mouse_position[0];
+        var y = mouse_position[1];
+        var rect = context.canvas.getBoundingClientRect();
+
+        x = x - rect.left;
+        y = rect.bottom - y;
+    
+        var gl = context.canvas.getContext("webgl");
+
+        var pixel = new Uint8Array(4);
+        gl.readPixels(x, y, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, pixel);
+        console.log("x: " + x + " y: " + y);
+        console.log("picked: " + pixel);
     }
 }
