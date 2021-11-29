@@ -37,7 +37,8 @@ class Particle{
         //set scale according to age 
         let scale = this.scale*Math.max(0.5, (1 - this.age/this.life));
         let scale_transform = Mat4.scale(scale, scale, scale);
-        let final_model_tranform = this.euclidian_model_tranform.times(scale_transform);
+        let rotation = Mat4.rotation(Math.PI/2, 1, 0, 0);//rotate so the square is visible 
+        let final_model_tranform = this.euclidian_model_tranform.times(scale_transform).times(rotation);
         return final_model_tranform;
     }
 
@@ -71,6 +72,7 @@ class Particles_Emitter{
         //predefined particle shapes and materials 
         this.shapes = {
             cube: new defs.Cube(),
+            square: new defs.Square(),
             cube_outline: new defs.Cube_Outline(),
         }
         this.materials = {
@@ -106,7 +108,7 @@ class Particles_Emitter{
                                                 this.particle_scale,
                                                 euclidian_model_tranform));
             }else{
-                this.particles.push(new Particle(this.shapes.cube, 
+                this.particles.push(new Particle(this.shapes.square, 
                                                 this.materials.white_plastic,
                                                 life, 
                                                 vec3(x_velocity, y_velocity, z_velocity),
