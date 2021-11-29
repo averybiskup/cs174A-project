@@ -1,6 +1,7 @@
 import {defs, tiny} from './examples/common.js';
 import {Board} from './board.js';
 import { get_model_translate_from_grid } from './utilities.js';
+import { Particles_Emitter } from './particles.js';
 
 const {
     Vector, Vector3, vec, vec3, vec4, color, hex_color, Matrix, Mat4, Light, Shape, Material, Scene,
@@ -105,6 +106,9 @@ export class Project extends Base_Scene {
         // Randomly place start and end point
         this.board = new Board(this.board_width/2, 
                                this.board_height/2);
+        this.particles_emitter = {
+            player_particle_emitter: new Particles_Emitter(2, 0.28, 0.3, vec4(1, 1, 1, 1), 3, 1, 3),
+        }
         this.time_counter = 0;
         this.drawing_board = true;
         this.current_x = 0;
@@ -240,6 +244,27 @@ export class Project extends Base_Scene {
         model_transform = (this.board.player.model_transform).times(Mat4.rotation(this.board.player.point_to, 0, 1, 0))
                                                              .times(Mat4.scale(this.board.player.scale, this.board.player.scale, this.board.player.scale));
         this.shapes.player.draw(context, program_state, model_transform, this.materials.plane);
+        //add particle trace behind player when moving 
+        if(this.board.player.is_moving()){
+            //offset particle emitter behind player
+            let initial_model_transform = this.board.player.model_transform;
+            let scale = this.board.player.scale;
+            if(this.board.player.isMovingE){
+                initial_model_transform = initial_model_transform.times(Mat4.translation(-1*scale, 0, 0));
+            }else if(this.board.player.isMovingW){
+                initial_model_transform = initial_model_transform.times(Mat4.translation(1*scale, 0, 0));
+            }else if(this.board.player.isMovingN){
+                initial_model_transform = initial_model_transform.times(Mat4.translation(0, 0, 1*scale));
+            }else if(this.board.player.isMovingS){
+                initial_model_transform = initial_model_transform.times(Mat4.translation(0, 0, -1*scale));
+            }
+            //add more particles 
+            this.particles_emitter.player_particle_emitter.add_particles(initial_model_transform);
+        }
+        if(!this.particles_emitter.player_particle_emitter.is_empty()){
+            this.particles_emitter.player_particle_emitter.update_particles(program_state);
+            this.particles_emitter.player_particle_emitter.render(context, program_state);
+        }
 
         const birds_eye_x = 20;
         const birds_eye_y = 80 + (this.board.grid_width * 2) + (this.board.grid_height * 2) - 40;
