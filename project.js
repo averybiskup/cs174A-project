@@ -47,6 +47,7 @@ class Base_Scene extends Scene {
         this.board_height = 21;
         // The white material and basic shader are used for drawing the outline.
         this.white = new Material(new defs.Basic_Shader());
+
     }
 
 
@@ -73,12 +74,20 @@ class Base_Scene extends Scene {
         this.shapes.boarder.draw(context, program_state, model_transform, this.materials.grey_plastic);
     }
 
-    mouse_click (e, pos) {
-        var x = e.clientX;
-        var y = e.clientY;
+    mouse_click () {
+
+        let pickedX = this.pixel[1];
+        let pickedY = this.pixel[0];
         
-        this.mouseX = x;
-        this.mouseY = y;
+        let maze = this.board.final_grid;
+        if (this.pickedX >= 0 && this.pickedX <= maze.length - 1 &&
+            this.pickedY >= 0 && this.pickedY <= maze.length - 1)
+        {
+            this.board.toggle_grid_wall(this.pickedX, this.pickedY);
+            this.prevPickedX = this.pickedX;
+            this.prevPickedY = this.pickedY;
+        }
+
     }
 
     display(context, program_state) {
@@ -120,6 +129,35 @@ export class Project extends Base_Scene {
 
         this.prevPickedX = -1;
         this.prevPickedY = -1;
+
+        this.listeners_added = false;
+        this.pixel = new Uint8Array(4);
+    }
+
+    add_listeners(canvas) {
+
+        this.listeners_added = true;
+        
+        canvas.addEventListener("mousedown", e => {
+            e.preventDefault();
+
+            this.mouseX = e.clientX;
+            this.mouseY = e.clientY;
+
+        });
+
+        canvas.addEventListener("mouseup", e => {
+            e.preventDefault();
+
+            if (this.pixel[0] >= 0 
+                && this.pixel[0] <= this.board_width
+                && this.pixel[1] >= 0
+                && this.pixel[1] <= this.board_width) {
+                
+                this.board.toggle_grid_wall(this.pixel[0], this.pixel[1]);
+            }
+        });
+
     }
 
     make_control_panel() {
@@ -137,6 +175,10 @@ export class Project extends Base_Scene {
 
     display(context, program_state) {
         super.display(context, program_state);
+
+        if (!this.listeners_added) {
+            this.add_listeners(context.canvas); 
+        }
 
         let canvas = context.canvas;
         const gl = canvas.getContext("webgl");
@@ -167,55 +209,31 @@ export class Project extends Base_Scene {
             vec((e.clientX - (rect.left + rect.right) / 2) / ((rect.right - rect.left) / 2),
                 (e.clientY - (rect.bottom + rect.top) / 2) / ((rect.top - rect.bottom) / 2));
 
-        canvas.addEventListener("mousedown", e => {
-            e.preventDefault();
-            const rect = canvas.getBoundingClientRect()
-            this.mouse_click(e, mouse_position(e), context, program_state);
-        });
-        
+        const rect = canvas.getBoundingClientRect()
+
         var x = this.mouseX;
         var y = this.mouseY;
-        var rect = context.canvas.getBoundingClientRect();
 
         x = x - rect.left;
         y = rect.bottom - y;
+        gl.readPixels(x, y, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, this.pixel);
 
-        var pixel = new Uint8Array(4);
-        gl.readPixels(x, y, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, pixel);
-        
-        //console.log("picked: " + pixel);
-        
-        this.pickedX = pixel[1];
-        this.pickedY = pixel[0];
+        gl.clear(gl.DEPTH_BUFFER_BIT);        
 
-        //console.log("x: " + this.pickedX + " y: " + this.pickedY);
-
-        if (this.pickedX != this.prevPickedX && this.pickedY != this.prevPickedY &&
-            this.pickedX >= 0 && this.pickedX <= maze.length - 1 &&
-            this.pickedY >= 0 && this.pickedY <= maze.length - 1)
-        {
-            console.log("x: " + this.pickedX + " y: " + this.pickedY);
-            this.board.toggle_grid_wall(this.pickedX, this.pickedY);
-            this.prevPickedX = this.pickedX;
-            this.prevPickedY = this.pickedY;
-        }
-
-        gl.clear(gl.DEPTH_BUFFER_BIT);
-        
         //draw maze 
         model_transform = Mat4.identity();
         for(let i = 0; i < this.board.final_grid.length; i++){
             for(let j = 0; j < this.board.final_grid[0].length; j++){
-//                 if (maze[i][j].iswall) { //draw wall
-//                     model_transform = get_model_transform_from_grid(i, j);
-//                     this.shapes.cube.draw(context, program_state, model_transform, this.materials.grey_plastic.override({color: maze[i][j].color}));
-//                 }
-//                 else {
-//                     model_transform = get_model_transform_from_grid(i, j);
-//                     let scale = maze[i][j].scale;
-//                     model_transform = model_transform.times(Mat4.scale(scale, 0.01, scale)).times(Mat4.translation(0, -100, 0));
-//                     this.shapes.cube.draw(context, program_state, model_transform, this.materials.ground.override({color: maze[i][j].color}));
-//                 }
+                 if (maze[i][j].iswall) { //draw wall
+                     model_transform = get_model_transform_from_grid(i, j);
+                     this.shapes.cube.draw(context, program_state, model_transform, this.materials.grey_plastic.override({color: maze[i][j].color}));
+                 }
+                 else {
+                     model_transform = get_model_transform_from_grid(i, j);
+                     let scale = maze[i][j].scale;
+                     model_transform = model_transform.times(Mat4.scale(scale, 0.01, scale)).times(Mat4.translation(0, -100, 0));
+                     this.shapes.cube.draw(context, program_state, model_transform, this.materials.ground.override({color: maze[i][j].color}));
+                 }
                 if(maze[i][j].isEnd) { //draw end 
                     model_transform = get_model_transform_from_grid(i, j);
                     this.shapes.sphere.draw(context, program_state, model_transform, this.materials.grey_plastic.override({color: maze[i][j].color}));
