@@ -43,8 +43,8 @@ class Base_Scene extends Scene {
 
         this.animation_queue = [];
 
-        this.board_width = 21;
-        this.board_height = 21;
+        this.board_width = 40;
+        this.board_height = 40;
         // The white material and basic shader are used for drawing the outline.
         this.white = new Material(new defs.Basic_Shader());
     }
@@ -155,8 +155,9 @@ export class Project extends Base_Scene {
         this.board = new Board(this.board_width/2, 
                                this.board_height/2);
         this.time_counter = 0;
-        this.mouseX = 0;
-        var mouseY = 0;
+
+        this.prevPickedX = 50;
+        this.prevPickedY = 50;
     }
 
     make_control_panel() {
@@ -188,28 +189,30 @@ export class Project extends Base_Scene {
                 let maze = this.board.final_grid;
                 if (maze[i][j].iswall) { //draw wall
                     model_transform = get_model_transform_from_grid(i, j);
-                    this.shapes.cube.draw(context, program_state, model_transform, this.materials.grey_picker_plastic.override({color: color(i/25, j/25, 0.1, 1.0)}));
+                    this.shapes.cube.draw(context, program_state, model_transform, this.materials.grey_picker_plastic.override({color: color(i/maze.length, j/maze.length, 0.1, 1.0)}));
+                    console.log()
                 }
                 else {
                     model_transform = get_model_transform_from_grid(i, j);
                     let scale = maze[i][j].scale;
                     model_transform = model_transform.times(Mat4.scale(scale, 0.01, scale)).times(Mat4.translation(0, -100, 0));
-                    this.shapes.cube.draw(context, program_state, model_transform, this.materials.grey_picker_plastic.override({color: color(i/25, j/25, 0.1, 1.0)}));
+                    this.shapes.cube.draw(context, program_state, model_transform, this.materials.grey_picker_plastic.override({color: color(i/maze.length, j/maze.length, 0.1, 1.0)}));
                 }
             }
         }
 
+        console.log(this.board.final_grid.length);
+
+        const mouse_position = (e, rect = canvas.getBoundingClientRect()) =>
+            vec((e.clientX - (rect.left + rect.right) / 2) / ((rect.right - rect.left) / 2),
+                (e.clientY - (rect.bottom + rect.top) / 2) / ((rect.top - rect.bottom) / 2));
+
         canvas.addEventListener("mousedown", e => {
             e.preventDefault();
             const rect = canvas.getBoundingClientRect()
-//             console.log("e.clientX: " + e.clientX);
-//             console.log("e.clientX - rect.left: " + (e.clientX - rect.left));
-//             console.log("e.clientY: " + e.clientY);
-//             console.log("e.clientY - rect.top: " + (e.clientY - rect.top));
-//             console.log("mouse_position(e): " + mouse_position(e));
             this.mouse_click(e, mouse_position(e), context, program_state);
         });
-
+        
         var x = this.mouseX;
         var y = this.mouseY;
         var rect = context.canvas.getBoundingClientRect();
@@ -221,6 +224,18 @@ export class Project extends Base_Scene {
         gl.readPixels(x, y, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, pixel);
         //console.log("x: " + this.mouseX);
         console.log("picked: " + pixel);
+        
+        this.pickedX = pixel[0]/10;
+        this.pickedY = pixel[1]/10;
+
+        let maze = this.board.final_grid;
+
+        if (this.pickedX != this.prevPickedX && this.pickedY != this.prevPickedY)
+        {
+            //this.board.toggle_grid_wall(this.pickedX, this.pickedY);
+            this.prevPickedX = this.pickedX;
+            this.prevPickedY = this.pickedY;
+        }
 
         gl.clear(gl.DEPTH_BUFFER_BIT);
         
@@ -228,17 +243,16 @@ export class Project extends Base_Scene {
         model_transform = Mat4.identity();
         for(let i = 0; i < this.board.final_grid.length; i++){
             for(let j = 0; j < this.board.final_grid[0].length; j++){
-                let maze = this.board.final_grid;
-                if (maze[i][j].iswall) { //draw wall
-                    model_transform = get_model_transform_from_grid(i, j);
-                    this.shapes.cube.draw(context, program_state, model_transform, this.materials.grey_plastic.override({color: maze[i][j].color}));
-                }
-                else {
-                    model_transform = get_model_transform_from_grid(i, j);
-                    let scale = maze[i][j].scale;
-                    model_transform = model_transform.times(Mat4.scale(scale, 0.01, scale)).times(Mat4.translation(0, -100, 0));
-                    this.shapes.cube.draw(context, program_state, model_transform, this.materials.ground.override({color: maze[i][j].color}));
-                }
+//                 if (maze[i][j].iswall) { //draw wall
+//                     model_transform = get_model_transform_from_grid(i, j);
+//                     this.shapes.cube.draw(context, program_state, model_transform, this.materials.grey_plastic.override({color: maze[i][j].color}));
+//                 }
+//                 else {
+//                     model_transform = get_model_transform_from_grid(i, j);
+//                     let scale = maze[i][j].scale;
+//                     model_transform = model_transform.times(Mat4.scale(scale, 0.01, scale)).times(Mat4.translation(0, -100, 0));
+//                     this.shapes.cube.draw(context, program_state, model_transform, this.materials.ground.override({color: maze[i][j].color}));
+//                 }
                 if(maze[i][j].isEnd) { //draw end 
                     model_transform = get_model_transform_from_grid(i, j);
                     this.shapes.sphere.draw(context, program_state, model_transform, this.materials.grey_plastic.override({color: maze[i][j].color}));
@@ -271,10 +285,6 @@ export class Project extends Base_Scene {
         this.board.discrete_move_player(dt);
         model_transform = (this.board.player.model_transform).times(Mat4.rotation(this.board.player.point_to, 0, 1, 0));
         this.shapes.player.draw(context, program_state, model_transform, this.materials.plane);
-
-        const mouse_position = (e, rect = canvas.getBoundingClientRect()) =>
-            vec((e.clientX - (rect.left + rect.right) / 2) / ((rect.right - rect.left) / 2),
-                (e.clientY - (rect.bottom + rect.top) / 2) / ((rect.top - rect.bottom) / 2));
         
         /*
         var mouseX;

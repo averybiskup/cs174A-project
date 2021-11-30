@@ -89,6 +89,9 @@ class FinalCell {
         }
         this.color = color(this.r, this.g, this.b, 1.0);
     }
+    toggle_wall() {
+        this.iswall = !this.iswall;
+    }
     update_appearance(dt, current_x, current_z, path_next_x, path_next_z){
         if(this.x === path_next_x && this.y === path_next_z){ //set next grid in the path yellow and hide it so it does not block player
             this.r = PATH_COLOR_R;
@@ -371,6 +374,10 @@ class Board {
                 this.final_grid[i][j].update_appearance(dt, this.current_x, this.current_z, this.path_next_x, this.path_next_z);
             }
         } 
+    }
+
+    toggle_grid_wall(x, y) {
+        this.final_grid[x][y].iswall = !this.final_grid[x][y].iswall;
     }
 
     //move player grid by grid one dir at a time
