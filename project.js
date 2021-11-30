@@ -43,8 +43,8 @@ class Base_Scene extends Scene {
 
         this.animation_queue = [];
 
-        this.board_width = 40;
-        this.board_height = 40;
+        this.board_width = 21;
+        this.board_height = 21;
         // The white material and basic shader are used for drawing the outline.
         this.white = new Material(new defs.Basic_Shader());
     }
@@ -73,50 +73,12 @@ class Base_Scene extends Scene {
         this.shapes.boarder.draw(context, program_state, model_transform, this.materials.grey_plastic);
     }
 
-    mouse_click (e, pos, context, program_state) {
-        /*
-        let pos_ndc_near = vec4(pos[0], pos[1], -1.0, 1.0);
-        let pos_ndc_far  = vec4(pos[0], pos[1],  1.0, 1.0);
-        let center_ndc_near = vec4(0.0, 0.0, -1.0, 1.0);
-        let P = program_state.projection_transform;
-        let V = program_state.camera_inverse;
-        let pos_world_near = Mat4.inverse(P.times(V)).times(pos_ndc_near);
-        let pos_world_far  = Mat4.inverse(P.times(V)).times(pos_ndc_far);
-        let center_world_near  = Mat4.inverse(P.times(V)).times(center_ndc_near);
-        pos_world_near.scale_by(1 / pos_world_near[3]);
-        pos_world_far.scale_by(1 / pos_world_far[3]);
-        center_world_near.scale_by(1 / center_world_near[3]);
-        //console.log(pos_world_near);
-        //console.log(pos_world_far);
-        //
-        // Do whatever you want
-        let animation_bullet = {
-            from: center_world_near,
-            to: pos_world_far,
-            start_time: program_state.animation_time,
-            end_time: program_state.animation_time + 5000,
-            more_info: "add gravity"
-        }
-        */
-
-        //console.log(pos);
-
+    mouse_click (e, pos) {
         var x = e.clientX;
         var y = e.clientY;
-        var rect = context.canvas.getBoundingClientRect();
-
-//         x = x - rect.left;
-//         y = rect.bottom - y;
-
+        
         this.mouseX = x;
         this.mouseY = y;
-    
-//         var gl = context.canvas.getContext("webgl");
-
-//         var pixel = new Uint8Array(4);
-//         gl.readPixels(x, y, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, pixel);
-        //console.log("x: " + x + " y: " + y);
-        //console.log("picked: " + pixel);
     }
 
     display(context, program_state) {
@@ -156,8 +118,8 @@ export class Project extends Base_Scene {
                                this.board_height/2);
         this.time_counter = 0;
 
-        this.prevPickedX = 50;
-        this.prevPickedY = 50;
+        this.prevPickedX = -1;
+        this.prevPickedY = -1;
     }
 
     make_control_panel() {
@@ -178,30 +140,28 @@ export class Project extends Base_Scene {
 
         let canvas = context.canvas;
         const gl = canvas.getContext("webgl");
-
+        
         //draw the maze contents according to board(see definition in board.js) (needs to be replaced later)
         let t = program_state.animation_time / 1000;
         let dt = program_state.animation_delta_time / 1000;
 
+        let maze = this.board.final_grid;
+
         let model_transform = Mat4.identity();
         for(let i = 0; i < this.board.final_grid.length; i++){
             for(let j = 0; j < this.board.final_grid[0].length; j++){
-                let maze = this.board.final_grid;
                 if (maze[i][j].iswall) { //draw wall
                     model_transform = get_model_transform_from_grid(i, j);
-                    this.shapes.cube.draw(context, program_state, model_transform, this.materials.grey_picker_plastic.override({color: color(i/maze.length, j/maze.length, 0.1, 1.0)}));
-                    console.log()
+                    this.shapes.cube.draw(context, program_state, model_transform, this.materials.grey_picker_plastic.override({color: color(i/255, j/255, .1, 1.0)}));
                 }
                 else {
                     model_transform = get_model_transform_from_grid(i, j);
                     let scale = maze[i][j].scale;
                     model_transform = model_transform.times(Mat4.scale(scale, 0.01, scale)).times(Mat4.translation(0, -100, 0));
-                    this.shapes.cube.draw(context, program_state, model_transform, this.materials.grey_picker_plastic.override({color: color(i/maze.length, j/maze.length, 0.1, 1.0)}));
+                    this.shapes.cube.draw(context, program_state, model_transform, this.materials.grey_picker_plastic.override({color: color(i/255, j/255, .1, 1.0)}));
                 }
             }
         }
-
-        console.log(this.board.final_grid.length);
 
         const mouse_position = (e, rect = canvas.getBoundingClientRect()) =>
             vec((e.clientX - (rect.left + rect.right) / 2) / ((rect.right - rect.left) / 2),
@@ -222,17 +182,20 @@ export class Project extends Base_Scene {
 
         var pixel = new Uint8Array(4);
         gl.readPixels(x, y, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, pixel);
-        //console.log("x: " + this.mouseX);
-        console.log("picked: " + pixel);
         
-        this.pickedX = pixel[0]/10;
-        this.pickedY = pixel[1]/10;
+        //console.log("picked: " + pixel);
+        
+        this.pickedX = pixel[1];
+        this.pickedY = pixel[0];
 
-        let maze = this.board.final_grid;
+        //console.log("x: " + this.pickedX + " y: " + this.pickedY);
 
-        if (this.pickedX != this.prevPickedX && this.pickedY != this.prevPickedY)
+        if (this.pickedX != this.prevPickedX && this.pickedY != this.prevPickedY &&
+            this.pickedX >= 0 && this.pickedX <= maze.length - 1 &&
+            this.pickedY >= 0 && this.pickedY <= maze.length - 1)
         {
-            //this.board.toggle_grid_wall(this.pickedX, this.pickedY);
+            console.log("x: " + this.pickedX + " y: " + this.pickedY);
+            this.board.toggle_grid_wall(this.pickedX, this.pickedY);
             this.prevPickedX = this.pickedX;
             this.prevPickedY = this.pickedY;
         }
