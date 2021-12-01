@@ -138,9 +138,17 @@ export class Project extends Base_Scene {
                 && this.pixel[1] >= 0
                 && this.pixel[1] <= this.board_width) {
                 
+                console.log(this.pixel)
                 this.board.toggle_grid_wall(this.pixel[0], this.pixel[1]);
             }
         });
+
+        canvas.addEventListener('mousemove', e => {
+            e.preventDefault();
+
+            this.mouseX = e.clientX;
+            this.mouseY = e.clientY;
+        })
     }
 
     // Regenerating maze
@@ -250,6 +258,8 @@ export class Project extends Base_Scene {
             }
         }
 
+        this.draw_maze_ground(context, program_state);
+
         const rect = canvas.getBoundingClientRect();
 
         var x = this.mouseX;
@@ -261,7 +271,10 @@ export class Project extends Base_Scene {
 
         gl.clear(gl.DEPTH_BUFFER_BIT);
 
-        this.draw_maze_ground(context, program_state);
+        if (this.pixel[1] >= 0 && this.pixel[1] <= maze.length && this.pixel[0] >= 0 && this.pixel[0] <= maze.length) {
+            maze[this.pixel[0]][this.pixel[1]].color = color(1.0, 0, 0, 1.0);
+        }
+
         this.draw_maze_boarder(context, program_state, this.board_width*2, this.board_height*2); //draw a 40 x 30 area on x-z plane
 
         // Drawing board
