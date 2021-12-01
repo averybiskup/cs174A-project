@@ -138,9 +138,17 @@ export class Project extends Base_Scene {
                 && this.pixel[1] >= 0
                 && this.pixel[1] <= this.board_width) {
                 
+                console.log(this.pixel)
                 this.board.toggle_grid_wall(this.pixel[0], this.pixel[1]);
             }
         });
+
+        canvas.addEventListener('mousemove', e => {
+            e.preventDefault();
+
+            this.mouseX = e.clientX;
+            this.mouseY = e.clientY;
+        })
     }
 
     // Regenerating maze
@@ -240,8 +248,8 @@ export class Project extends Base_Scene {
         for(let i = 0; i < this.board.final_grid.length; i++){
             for(let j = 0; j < this.board.final_grid[0].length; j++){
                 if (maze[i][j].iswall) { //draw wall
-                    model_transform = get_model_translate_from_grid(i, j).times(Mat4.scale(0.8, 0.8, 0.8));
-                    this.shapes.cube.draw(context, program_state, model_transform, this.materials.grey_picker_plastic.override({color: color(i/255, j/255, .1, 1.0)}));
+                        model_transform = get_model_translate_from_grid(i, j).times(Mat4.scale(0.8, 0.8, 0.8));
+                        this.shapes.cube.draw(context, program_state, model_transform, this.materials.grey_picker_plastic.override({color: color(i/255, j/255, .1, 1.0)}));
                 }
                 else if(!maze[i][j].isPlayer && !maze[i][j].isEnd && maze[i][j].isShown){
                     model_transform = get_model_translate_from_grid(i, j);
@@ -251,6 +259,8 @@ export class Project extends Base_Scene {
                 }
             }
         }
+
+        this.draw_maze_ground(context, program_state);
 
         const rect = canvas.getBoundingClientRect();
 
@@ -263,7 +273,10 @@ export class Project extends Base_Scene {
 
         gl.clear(gl.DEPTH_BUFFER_BIT);
 
-        this.draw_maze_ground(context, program_state);
+        if (this.pixel[1] >= 0 && this.pixel[1] <= maze.length && this.pixel[0] >= 0 && this.pixel[0] <= maze.length) {
+            maze[this.pixel[0]][this.pixel[1]].color = color(1.0, 0, 0, 1.0);
+        }
+
         this.draw_maze_boarder(context, program_state, this.board_width*2, this.board_height*2); //draw a 40 x 30 area on x-z plane
 
         // Drawing board
