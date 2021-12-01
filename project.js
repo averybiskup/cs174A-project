@@ -240,7 +240,7 @@ export class Project extends Base_Scene {
                     model_transform = get_model_translate_from_grid(i, j).times(Mat4.scale(0.8, 0.8, 0.8));
                     this.shapes.cube.draw(context, program_state, model_transform, this.materials.grey_picker_plastic.override({color: color(i/255, j/255, .1, 1.0)}));
                 }
-                else {
+                else if(!maze[i][j].isPlayer && !maze[i][j].isEnd && maze[i][j].isShown){
                     model_transform = get_model_translate_from_grid(i, j);
                     let scale = maze[i][j].scale;
                     model_transform = model_transform.times(Mat4.scale(scale, 0.01, scale)).times(Mat4.translation(0, -100, 0));
