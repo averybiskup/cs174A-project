@@ -183,8 +183,8 @@ export class Project extends Base_Scene {
         
         // Restart algorithm
         this.key_triggered_button("Regenerate", ['x'], () => this.regenBoard() ); //random regeneration of board
-        this.key_triggered_button("Reset", ['r'], () => this.board.reset_board(false) ); //reset board, preserve maze, DO NOT preserve player location
-        this.key_triggered_button("Pause", ['p'], () => this.board.reset_board(true) ); //pause all the algorithm, Preserve both maze and player location
+        this.key_triggered_button("Reset", ['m'], () => this.board.reset_board(false) ); //reset board, preserve maze, DO NOT preserve player location
+        this.key_triggered_button("Pause", ['n'], () => this.board.reset_board(true) ); //pause all the algorithm, Preserve both maze and player location
 
         this.key_triggered_button("Decrease x", ['<'], () => this.resetX(-2) ); //visualize dfs
         this.key_triggered_button("Increase x", ['>'], () => this.resetX(2) ); //visualize dfs
