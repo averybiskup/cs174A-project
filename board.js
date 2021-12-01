@@ -384,6 +384,10 @@ class Board {
         }
     }
 
+    toggle_grid_wall(x, y) {
+        this.final_grid[x][y].iswall = !this.final_grid[x][y].iswall;
+    }
+
     //move player grid by grid one dir at a time
     move_player(dx, dz) {
         this.final_grid[this.player.grid_z][this.player.grid_x].isPlayer = false;

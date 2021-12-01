@@ -32,6 +32,8 @@ class Base_Scene extends Scene {
                 {ambient: 1.0, diffusivity:.2, color: hex_color('#ffffff')}),
             grey_plastic: new Material(new defs.Phong_Shader(),
                 {ambient:.6, diffusivity: .6, color: hex_color('#808080')}),
+            grey_picker_plastic: new Material(new defs.Phong_Shader(),
+                {specularity: 0, ambient:1, diffusivity: 0, color: hex_color('#808080')}),
             green_plastic: new Material(new defs.Phong_Shader(),
                 {ambient:.6, diffusivity: .6, color: hex_color('#00ff00')}),
             red_plastic: new Material(new defs.Phong_Shader(),
@@ -114,6 +116,33 @@ export class Project extends Base_Scene {
         this.current_x = 0;
         this.current_y = 0;
         this.camera_angle = 'side';
+
+        this.listeners_added = false;
+        this.pixel = new Uint8Array(4);
+    }
+
+    add_listeners(canvas) {
+        this.listeners_added = true;
+        
+        canvas.addEventListener("mousedown", e => {
+            e.preventDefault();
+
+            this.mouseX = e.clientX;
+            this.mouseY = e.clientY;
+
+        });
+
+        canvas.addEventListener("mouseup", e => {
+            e.preventDefault();
+
+            if (this.pixel[0] >= 0 
+                && this.pixel[0] <= this.board_width
+                && this.pixel[1] >= 0
+                && this.pixel[1] <= this.board_width) {
+                
+                this.board.toggle_grid_wall(this.pixel[0], this.pixel[1]);
+            }
+        });
     }
 
     // Regenerating maze
@@ -179,21 +208,57 @@ export class Project extends Base_Scene {
             let scale = maze[i][j].scale;
             model_transform = model_transform.times(Mat4.scale(scale, scale, scale));
             this.shapes.sphere.draw(context, program_state, model_transform, this.materials.grey_plastic.override({color: maze[i][j].color}));
-        } else if(!maze[i][j].isPlayer && maze[i][j].isShown){
+        } else if(maze[i][j].isShown){
             model_transform = get_model_translate_from_grid(i, j);
             let scale = maze[i][j].scale;
-            model_transform = model_transform.times(Mat4.scale(scale, scale, scale));
+            model_transform = model_transform.times(Mat4.scale(scale, 0.01, scale)).times(Mat4.translation(0, -100, 0));
             this.shapes.cube.draw(context, program_state, model_transform, this.materials.white_plastic.override({color: maze[i][j].color}));
         }
     }
 
     display(context, program_state) {
         super.display(context, program_state);
+
+        if (!this.listeners_added) {
+            this.add_listeners(context.canvas); 
+        }
+
+        let canvas = context.canvas;
+        const gl = canvas.getContext("webgl");
+
         //draw the maze contents according to board(see definition in board.js) (needs to be replaced later)
         let t = program_state.animation_time / 1000;
         let dt = program_state.animation_delta_time / 1000;
 
         let model_transform = Mat4.identity();
+
+        let maze = this.board.final_grid;
+
+        for(let i = 0; i < this.board.final_grid.length; i++){
+            for(let j = 0; j < this.board.final_grid[0].length; j++){
+                if (maze[i][j].iswall) { //draw wall
+                    model_transform = get_model_translate_from_grid(i, j).times(Mat4.scale(0.8, 0.8, 0.8));
+                    this.shapes.cube.draw(context, program_state, model_transform, this.materials.grey_picker_plastic.override({color: color(i/255, j/255, .1, 1.0)}));
+                }
+                else {
+                    model_transform = get_model_translate_from_grid(i, j);
+                    let scale = maze[i][j].scale;
+                    model_transform = model_transform.times(Mat4.scale(scale, 0.01, scale)).times(Mat4.translation(0, -100, 0));
+                    this.shapes.cube.draw(context, program_state, model_transform, this.materials.grey_picker_plastic.override({color: color(i/255, j/255, .1, 1.0)}));
+                }
+            }
+        }
+
+        const rect = canvas.getBoundingClientRect();
+
+        var x = this.mouseX;
+        var y = this.mouseY;
+
+        x = x - rect.left;
+        y = rect.bottom - y;
+        gl.readPixels(x, y, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, this.pixel);
+
+        gl.clear(gl.DEPTH_BUFFER_BIT);
 
         // Drawing board
         if (this.drawing_board === true) {
