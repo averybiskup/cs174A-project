@@ -80,6 +80,21 @@ class FinalCell {
         this.scale = DEFAULT_SCALE;
         this.scale_rate = DEFAULT_SCALE_RATE;
     }
+    
+    reset(){
+        this.init_color();
+        this.isShown = true;
+        this.isStart = false;
+        this.isPlayer = false;
+        this.isVisited = false;
+        this.is_changing_color = false;
+        this.is_init_color_set = false;
+        this.isScaling = false;
+        this.is_init_scale_set = false;
+        this.scale = DEFAULT_SCALE;
+        this.scale_rate = DEFAULT_SCALE_RATE;
+    }
+
     init_color() {
         if (this.iswall) {
             this.r = END_WALL_COLOR_R;
@@ -92,6 +107,7 @@ class FinalCell {
         }
         this.color = color(this.r, this.g, this.b, 1.0);
     }
+
     update_appearance(dt, current_x, current_z, path_next_x, path_next_z, isTracingPath) {
         if (!this.isEnd && isTracingPath && this.x === path_next_x && this.y === path_next_z) { //set next grid in the path yellow
             this.r = PATH_COLOR_R;
@@ -99,7 +115,7 @@ class FinalCell {
             this.b = PATH_COLOR_B;
         }
         else if (!this.isEnd && this.x === current_x && this.y === current_z && !this.isPlayer) { //current grid being visited by the algorithm
-                this.color = VISITING_COLOR;
+            this.color = VISITING_COLOR;
         }
         else if (!this.isEnd && this.is_changing_color) { //visited grid color effect
             //starting color
@@ -159,7 +175,7 @@ class Board {
         this.grid_width = grid_width; //grid_width  
         this.grid_height = grid_height; //grid_height 
         this.start_x = 0;; //starting grid x coordinate 
-        this.start_z = 0; //starting grid z coordinate 
+        this.start_z = 0; //starting grid z coordinate  
         this.end_x = 0; //ending grid x coordinate 
         this.end_z = 0; //ending grid z coordinate
         this.player; //player of the board   
@@ -170,6 +186,8 @@ class Board {
         this.init_player();
         this.init_end();
         this.init_grid_appearance();
+        this.init_start_x = this.start_x; //initial starting point x-coord
+        this.init_start_z = this.start_z; //initial starting point z-coord
         //searching alg
         this.current_x = this.start_x; //searching alg current x 
         this.current_z = this.start_z; //searching alg current y  
@@ -365,6 +383,51 @@ class Board {
         }
     }
 
+    reset_board(isPause) {
+        //reset grid 
+        this.reset_grid();
+        //set new player location
+        if(isPause){ //the player remain current location
+            this.start_x = this.player.grid_x;
+            this.start_z = this.player.grid_z;
+        }else{ //the player return to initial starting position 
+            this.player.grid_x = this.init_start_x;
+            this.player.grid_z = this.init_start_z;
+            this.player.point_to = this.player.init_point_to;
+            this.start_x = this.init_start_x;
+            this.start_z = this.init_start_z;
+        }
+        this.player.model_transform = get_model_translate_from_grid(this.player.grid_z, this.player.grid_x);
+        this.final_grid[this.start_z][this.start_x].isPlayer = true;
+        this.final_grid[this.start_z][this.start_x].isStart = true;
+
+        //searching alg reset
+        this.current_x = this.start_x; //searching alg current x 
+        this.current_z = this.start_z; //searching alg current y  
+        this.time_interval_between_step = DEFAULT_TIME_INTERVAL;//default time interval between step
+        this.isFoundEnd = false; // searching alg already found end point
+        this.isRunningDFS = false;
+
+        //path tracing reset
+        this.path = [[' ', this.current_x, this.current_z]]; //store the path of the player each element is an array of 3 elements ['direction', grid_x,  grid_z]
+        this.isTracingPath = false;
+        this.path_index = 1;
+        this.path_prev_x = this.start_x;
+        this.path_prev_z = this.start_z;
+        this.path_next_x = this.start_x;
+        this.path_next_z = this.start_z;
+        this.isPathExist = true;
+        
+    }
+
+    reset_grid(){
+        for (let i = 0; i < this.grid_height * 2; i++) {
+            for (let j = 0; j < this.grid_width * 2; j++) {
+                this.final_grid[i][j].reset();
+            }
+        }
+    }
+
     init_grid_appearance() {
         for (let i = 0; i < this.grid_height * 2; i++) {
             for (let j = 0; j < this.grid_width * 2; j++) {
@@ -384,11 +447,11 @@ class Board {
     toggle_grid_wall(x, y) {
         this.final_grid[x][y].iswall = !this.final_grid[x][y].iswall;
         //set the appropriate color of the wall
-        if(this.final_grid[x][y].iswall){ 
+        if (this.final_grid[x][y].iswall) {
             this.final_grid[x][y].r = END_WALL_COLOR_R;
             this.final_grid[x][y].g = END_WALL_COLOR_G;
             this.final_grid[x][y].b = END_WALL_COLOR_B;
-        }else{
+        } else {
             this.final_grid[x][y].r = EMPTY_SPACE_COLOR_R;
             this.final_grid[x][y].g = EMPTY_SPACE_COLOR_G;
             this.final_grid[x][y].b = EMPTY_SPACE_COLOR_B;
@@ -403,7 +466,7 @@ class Board {
         this.final_grid[this.player.grid_z][this.player.grid_x].isPlayer = true;
         this.player.model_transform = get_model_translate_from_grid(this.player.grid_z, this.player.grid_x);//reset player position, make sure it is centered in that grid
         //set the initial path array if the searching has not began
-        if(this.path.length === 1){
+        if (this.path.length === 1) {
             this.final_grid[this.start_z][this.start_x].isStart = false;
             this.start_x += dx;
             this.start_z += dz;
@@ -435,10 +498,10 @@ class Board {
         }
         //moving S
         if (this.player.isMovingS) {
-            if (this.is_movable(this.player.grid_x, this.player.grid_z + 1)){
+            if (this.is_movable(this.player.grid_x, this.player.grid_z + 1)) {
                 this.player.S_off_set = Math.max(0, this.player.S_moving_distance + dt * this.player.speed - GRID_UNIT_LENGTH);//error correction
                 this.player.move_south(dt);
-            }else{
+            } else {
                 this.player.isMovingS = false;
             }
         }
@@ -449,10 +512,10 @@ class Board {
         }
         //moving E
         if (this.player.isMovingE) {
-            if(this.is_movable(this.player.grid_x + 1, this.player.grid_z)){
+            if (this.is_movable(this.player.grid_x + 1, this.player.grid_z)) {
                 this.player.E_off_set = Math.max(0, this.player.E_moving_distance + dt * this.player.speed - GRID_UNIT_LENGTH);//error correction
                 this.player.move_east(dt);
-            }else{
+            } else {
                 this.player.isMovingE = false;
             }
         }
@@ -463,10 +526,10 @@ class Board {
         }
         //moving W
         if (this.player.isMovingW) {
-            if(this.is_movable(this.player.grid_x - 1, this.player.grid_z)){
+            if (this.is_movable(this.player.grid_x - 1, this.player.grid_z)) {
                 this.player.W_off_set = Math.max(0, this.player.W_moving_distance + dt * this.player.speed - GRID_UNIT_LENGTH);//error correction
                 this.player.move_west(dt);
-            }else{
+            } else {
                 this.player.isMovingW = false;
             }
         }
@@ -484,11 +547,11 @@ class Board {
         this.final_grid[current_z][current_x].isVisited = true;
         if (this.final_grid[current_z][current_x].isEnd) {
             //set the color of end cell when found, for now remain unchange  
-            this.final_grid[current_z][current_x].is_changing_color = false 
+            this.final_grid[current_z][current_x].is_changing_color = false
 
             this.isFoundEnd = true;
         }
-        else if(this.isPathExist){
+        else if (this.isPathExist) {
             //try moving north
             if (this.is_in_bound(current_x, current_z - 1)
                 && !this.final_grid[current_z - 1][current_x].iswall
@@ -533,11 +596,11 @@ class Board {
                 this.current_x = current_x;
                 this.current_z = current_z;
             }
-            else if(this.path.length > 1){ //trace back
+            else if (this.path.length > 1) { //trace back
                 this.path.pop();
                 this.current_x = this.path[this.path.length - 1][1];
                 this.current_z = this.path[this.path.length - 1][2];
-            }else{// failed 
+            } else {// failed 
                 this.isRunningDFS = false;
                 this.isPathExist = false;
             }

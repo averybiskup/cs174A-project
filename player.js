@@ -12,7 +12,8 @@ const {
         this.grid_x = player_x; //grid x-coord of player 
         this.grid_z = player_z; //grid z-coord of player
         this.scale = scale; //player model scaling  
-        this.point_to = point_to; //direction the player points to relative to South default 0 rad  
+        this.point_to = point_to; //direction the player points to relative to South default 0 rad
+        this.init_point_to = point_to; //initial point to   
         this.speed = speed; //default speed 2 units/second 
         this.model_transform = get_model_translate_from_grid(player_z, player_x); //holds current model_transform of player
         //stores player's states. 

@@ -144,7 +144,7 @@ export class Project extends Base_Scene {
     }
 
     // Regenerating maze
-    resetBoard() {
+    regenBoard() {
         this.board = new Board(this.board_width/2, this.board_height/2);    
         this.current_x = 0;
         this.current_y = 0;
@@ -156,7 +156,7 @@ export class Project extends Base_Scene {
         if (this.board_width >= 5 && this.board_width <= 40) {
             this.board_width += value;
             this.board.grid_width += value;
-            this.resetBoard();
+            this.regenBoard();
         }
     }
 
@@ -165,7 +165,7 @@ export class Project extends Base_Scene {
         if (this.board_height >= 5 && this.board_height <= 40) {
             this.board.grid_height += value;
             this.board_height += value;
-            this.resetBoard();
+            this.regenBoard();
         }
     }
 
@@ -182,7 +182,9 @@ export class Project extends Base_Scene {
         this.key_triggered_button("Run DFS", ['x'], () => this.board.isRunningDFS = true); //visualize dfs
         
         // Restart algorithm
-        this.key_triggered_button("Reset", ['x'], () => this.resetBoard() ); //visualize dfs
+        this.key_triggered_button("Regenerate", ['x'], () => this.regenBoard() ); //random regeneration of board
+        this.key_triggered_button("Reset", ['r'], () => this.board.reset_board(false) ); //reset board, preserve maze, DO NOT preserve player location
+        this.key_triggered_button("Pause", ['p'], () => this.board.reset_board(true) ); //pause all the algorithm, Preserve both maze and player location
 
         this.key_triggered_button("Decrease x", ['<'], () => this.resetX(-2) ); //visualize dfs
         this.key_triggered_button("Increase x", ['>'], () => this.resetX(2) ); //visualize dfs
