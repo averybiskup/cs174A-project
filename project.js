@@ -29,7 +29,7 @@ class Base_Scene extends Scene {
             ground: new Material(new defs.Phong_Shader(),
                 {ambient: .9, diffusivity: .6, color: hex_color("#ffffed")}),
             white_plastic: new Material(new defs.Phong_Shader(), 
-                {ambient: 1.0, diffusivity:.2, color: hex_color('#ffffff')}),
+                {ambient: .6, diffusivity:.6, color: hex_color('#ffffff')}),
             grey_plastic: new Material(new defs.Phong_Shader(),
                 {ambient:.6, diffusivity: .6, color: hex_color('#808080')}),
             grey_picker_plastic: new Material(new defs.Phong_Shader(),
@@ -203,16 +203,19 @@ export class Project extends Base_Scene {
             let scale = maze[i][j].scale;
             model_transform = model_transform.times(Mat4.scale(scale, scale, scale));
             this.shapes.cube.draw(context, program_state, model_transform, this.materials.grey_plastic.override({color: maze[i][j].color}));
-        } else if(maze[i][j].isEnd) { //draw end 
-            model_transform = get_model_translate_from_grid(i, j);
-            let scale = maze[i][j].scale;
-            model_transform = model_transform.times(Mat4.scale(scale, scale, scale));
-            this.shapes.sphere.draw(context, program_state, model_transform, this.materials.grey_plastic.override({color: maze[i][j].color}));
-        } else if(maze[i][j].isShown){
+        }
+        else {
             model_transform = get_model_translate_from_grid(i, j);
             let scale = maze[i][j].scale;
             model_transform = model_transform.times(Mat4.scale(scale, 0.01, scale)).times(Mat4.translation(0, -100, 0));
             this.shapes.cube.draw(context, program_state, model_transform, this.materials.white_plastic.override({color: maze[i][j].color}));
+        }
+
+        if(maze[i][j].isEnd) { //draw end 
+            model_transform = get_model_translate_from_grid(i, j);
+            let scale = maze[i][j].scale;
+            model_transform = model_transform.times(Mat4.scale(scale, scale, scale));
+            this.shapes.sphere.draw(context, program_state, model_transform, this.materials.grey_plastic.override({color: maze[i][j].color}));
         }
     }
 

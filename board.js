@@ -93,10 +93,7 @@ class FinalCell {
         this.color = color(this.r, this.g, this.b, 1.0);
     }
     update_appearance(dt, current_x, current_z, path_next_x, path_next_z, isTracingPath) {
-        if(this.isStart && !this.isEnd){
-            this.color = START_COLOR;
-        }
-        else if (!this.isEnd && isTracingPath && this.x === path_next_x && this.y === path_next_z) { //set next grid in the path yellow and hide it so it does not block player
+        if (!this.isEnd && isTracingPath && this.x === path_next_x && this.y === path_next_z) { //set next grid in the path yellow and hide it so it does not block player
             this.r = PATH_COLOR_R;
             this.g = PATH_COLOR_G;
             this.b = PATH_COLOR_B;
