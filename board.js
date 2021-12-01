@@ -81,7 +81,7 @@ class FinalCell {
         this.scale_rate = DEFAULT_SCALE_RATE;
     }
     init_color() {
-        if (this.iswall || this.isEnd) {
+        if (this.iswall) {
             this.r = END_WALL_COLOR_R;
             this.g = END_WALL_COLOR_G;
             this.b = END_WALL_COLOR_B;
@@ -93,14 +93,13 @@ class FinalCell {
         this.color = color(this.r, this.g, this.b, 1.0);
     }
     update_appearance(dt, current_x, current_z, path_next_x, path_next_z, isTracingPath) {
-        if (!this.isEnd && isTracingPath && this.x === path_next_x && this.y === path_next_z) { //set next grid in the path yellow and hide it so it does not block player
+        if (!this.isEnd && isTracingPath && this.x === path_next_x && this.y === path_next_z) { //set next grid in the path yellow
             this.r = PATH_COLOR_R;
             this.g = PATH_COLOR_G;
             this.b = PATH_COLOR_B;
-            this.isShown = false;
         }
-        else if (!this.isEnd && this.x === current_x && this.y === current_z) { //current grid being visited by the algorithm
-            this.color = VISITING_COLOR;
+        else if (!this.isEnd && this.x === current_x && this.y === current_z && !this.isPlayer) { //current grid being visited by the algorithm
+                this.color = VISITING_COLOR;
         }
         else if (!this.isEnd && this.is_changing_color) { //visited grid color effect
             //starting color
@@ -185,6 +184,7 @@ class Board {
         this.path_prev_z = this.start_z;
         this.path_next_x = this.start_x;
         this.path_next_z = this.start_z;
+        this.isPathExist = true;
     }
 
 
@@ -383,6 +383,16 @@ class Board {
 
     toggle_grid_wall(x, y) {
         this.final_grid[x][y].iswall = !this.final_grid[x][y].iswall;
+        //set the appropriate color of the wall
+        if(this.final_grid[x][y].iswall){ 
+            this.final_grid[x][y].r = END_WALL_COLOR_R;
+            this.final_grid[x][y].g = END_WALL_COLOR_G;
+            this.final_grid[x][y].b = END_WALL_COLOR_B;
+        }else{
+            this.final_grid[x][y].r = EMPTY_SPACE_COLOR_R;
+            this.final_grid[x][y].g = EMPTY_SPACE_COLOR_G;
+            this.final_grid[x][y].b = EMPTY_SPACE_COLOR_B;
+        }
     }
 
     //move player grid by grid one dir at a time
@@ -478,7 +488,7 @@ class Board {
 
             this.isFoundEnd = true;
         }
-        else {
+        else if(this.isPathExist){
             //try moving north
             if (this.is_in_bound(current_x, current_z - 1)
                 && !this.final_grid[current_z - 1][current_x].iswall
@@ -523,10 +533,13 @@ class Board {
                 this.current_x = current_x;
                 this.current_z = current_z;
             }
-            else { //trace back
+            else if(this.path.length > 1){ //trace back
                 this.path.pop();
                 this.current_x = this.path[this.path.length - 1][1];
                 this.current_z = this.path[this.path.length - 1][2];
+            }else{// failed 
+                this.isRunningDFS = false;
+                this.isPathExist = false;
             }
         }
     }

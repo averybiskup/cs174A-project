@@ -213,7 +213,7 @@ export class Project extends Base_Scene {
             model_transform = get_model_translate_from_grid(i, j);
             let scale = maze[i][j].scale;
             model_transform = model_transform.times(Mat4.scale(scale, scale, scale));
-            this.shapes.sphere.draw(context, program_state, model_transform, this.materials.grey_plastic.override({color: maze[i][j].color}));
+            this.shapes.sphere.draw(context, program_state, model_transform, this.materials.grey_plastic);
         }
     }
 
