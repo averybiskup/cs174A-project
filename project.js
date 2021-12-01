@@ -29,7 +29,7 @@ class Base_Scene extends Scene {
             ground: new Material(new defs.Phong_Shader(),
                 {ambient: .9, diffusivity: .6, color: hex_color("#ffffed")}),
             white_plastic: new Material(new defs.Phong_Shader(), 
-                {ambient: .6, diffusivity:.6, color: hex_color('#ffffff')}),
+                {ambient: 1.0, diffusivity:.6, color: hex_color('#ffffff')}),
             grey_plastic: new Material(new defs.Phong_Shader(),
                 {ambient:.6, diffusivity: .6, color: hex_color('#808080')}),
             grey_picker_plastic: new Material(new defs.Phong_Shader(),
@@ -89,8 +89,6 @@ class Base_Scene extends Scene {
         // *** Lights: *** Values of vector or point lights.
         const light_position = vec4(10, 10, 10, 1);
         program_state.lights = [new Light(light_position, color(1, 1, 1, 1), 1000)];
-        this.draw_maze_ground(context, program_state);
-        this.draw_maze_boarder(context, program_state, this.board_width*2, this.board_height*2); //draw a 40 x 30 area on x-z plane
     }
 }
 export class Project extends Base_Scene {
@@ -262,6 +260,9 @@ export class Project extends Base_Scene {
         gl.readPixels(x, y, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, this.pixel);
 
         gl.clear(gl.DEPTH_BUFFER_BIT);
+
+        this.draw_maze_ground(context, program_state);
+        this.draw_maze_boarder(context, program_state, this.board_width*2, this.board_height*2); //draw a 40 x 30 area on x-z plane
 
         // Drawing board
         if (this.drawing_board === true) {
