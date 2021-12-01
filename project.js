@@ -246,8 +246,8 @@ export class Project extends Base_Scene {
         for(let i = 0; i < this.board.final_grid.length; i++){
             for(let j = 0; j < this.board.final_grid[0].length; j++){
                 if (maze[i][j].iswall) { //draw wall
-                    model_transform = get_model_translate_from_grid(i, j).times(Mat4.scale(0.8, 0.8, 0.8));
-                    this.shapes.cube.draw(context, program_state, model_transform, this.materials.grey_picker_plastic.override({color: color(i/255, j/255, .1, 1.0)}));
+                        model_transform = get_model_translate_from_grid(i, j).times(Mat4.scale(0.8, 0.8, 0.8));
+                        this.shapes.cube.draw(context, program_state, model_transform, this.materials.grey_picker_plastic.override({color: color(i/255, j/255, .1, 1.0)}));
                 }
                 else if(!maze[i][j].isPlayer && !maze[i][j].isEnd && maze[i][j].isShown){
                     model_transform = get_model_translate_from_grid(i, j);
