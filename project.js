@@ -231,7 +231,8 @@ export class Project extends Base_Scene {
         this.key_triggered_button("Move 1 grid W", ["j"], () => this.board.player.isMovingW = true);
         this.key_triggered_button("Move 1 grid E", ["l"], () => this.board.player.isMovingE = true);
 
-        this.key_triggered_button("Run DFS", ['x'], () => this.board.isRunningDFS = true); //visualize dfs
+        this.key_triggered_button("Run DFS", ['y'], () => this.board.isRunningDFS = this.board.is_running_alg()?false:true); //visualize dfs, if other alg is running it won't work 
+        this.key_triggered_button("Run greedy best first", ['u'], () => this.board.isRunningGBF = this.board.is_running_alg()?false:true); //visualize gbf, if other alg is running it won't work 
         
         // Restart algorithm
         this.key_triggered_button("Regenerate", ['x'], () => this.regenBoard() ); //random regeneration of board
@@ -385,9 +386,16 @@ export class Project extends Base_Scene {
                 this.board.single_step_dfs();
                 this.time_counter = 0;
             }
+        }else if(this.board.isRunningGBF){
+            this.time_counter += dt;
+            if(this.time_counter > this.board.time_interval_between_step){
+                this.board.single_step_greedy_best_first();
+                this.time_counter = 0;
+            }
         }
         if(this.board.isFoundEnd){
             this.board.isRunningDFS = false;
+            this.board.isRunningGBF = false;
             this.time_counter += dt;
             if(this.time_counter > 1.0){ //wait for 1 sec before tracing the path 
                 this.board.isTracingPath = true;

@@ -1,6 +1,6 @@
 import { defs, tiny } from './examples/common.js';
 import { Player } from './player.js';
-import { rand_int, get_model_translate_from_grid } from './utilities.js';
+import { rand_int, get_model_translate_from_grid, Min_Heap } from './utilities.js';
 
 const {
     Vector, Vector3, vec, vec3, vec4, color, hex_color, Matrix, Mat4, Light, Shape, Material, Scene,
@@ -69,6 +69,8 @@ class FinalCell {
         this.isEnd = false;
         this.isPlayer = false;
         this.isVisited = false;
+        this.isExplored = false; //for GBF
+        this.parent =  new Array(); //for GBF
         //color
         this.is_changing_color = false;
         this.is_init_color_set = false;
@@ -89,6 +91,8 @@ class FinalCell {
         this.isStart = false;
         this.isPlayer = false;
         this.isVisited = false;
+        this.isExplored = false; // for GBF 
+        this.parent =  new Array(); //for GBF
         this.is_changing_color = false;
         this.is_init_color_set = false;
         this.isScaling = false;
@@ -197,6 +201,11 @@ class Board {
         this.time_interval_between_step = DEFAULT_TIME_INTERVAL;//default time interval between step
         this.isFoundEnd = false; // searching alg already found end point
         this.isRunningDFS = false;
+        this.isRunningGBF = false;
+        this.isPoping = true; //decide when to pop from the min heap
+        this.exploring_grid_gbf; //holds current grid being explored by gbf 
+        this.min_heap_gbf = new Min_Heap(); //store temp nodes 
+        this.min_heap_gbf.push([' ', this.current_x, this.current_z, this.get_distance_from_end(this.current_x, this.current_z)]);
         //path tracing 
         this.path = [[' ', this.current_x, this.current_z]]; //store the path of the player each element is an array of 3 elements ['direction', grid_x,  grid_z]
         this.isTracingPath = false;
@@ -445,6 +454,10 @@ class Board {
         this.time_interval_between_step = DEFAULT_TIME_INTERVAL;//default time interval between step
         this.isFoundEnd = false; // searching alg already found end point
         this.isRunningDFS = false;
+        this.isRunningGBF = false;
+        this.isPoping = true;
+        this.min_heap_gbf = new Min_Heap(); //store temp nodes 
+        this.min_heap_gbf.push([' ', this.current_x, this.current_z, this.get_distance_from_end(this.current_x, this.current_z)]);
 
         //path tracing reset
         this.path = [[' ', this.current_x, this.current_z]]; //store the path of the player each element is an array of 3 elements ['direction', grid_x,  grid_z]
@@ -516,6 +529,7 @@ class Board {
             this.current_x = this.start_x; //searching alg current x 
             this.current_z = this.start_z; //searching alg current y
             this.path[0] = [' ', this.current_x, this.current_z];
+            this.min_heap_gbf.container[0] = [' ', this.current_x, this.current_z, this.get_distance_from_end(this.current_x, this.current_z)]; 
         }
     }
 
@@ -580,6 +594,9 @@ class Board {
 
     //implement search algorithm 
     single_step_dfs() {
+        if(this.isFoundEnd){
+            this.isRunningGBF = false;
+        }
         let current_x = this.current_x;
         let current_z = this.current_z;
         this.final_grid[current_z][current_x].isVisited = true;
@@ -644,7 +661,122 @@ class Board {
             }
         }
     }
-    bfs() { }
+    
+    get_distance_from_end(x, z){
+        let x_distance = this.end_x - x;
+        let z_distance = this.end_z - z; 
+        return Math.sqrt(Math.pow(x_distance, 2) + Math.pow(z_distance, 2));
+    }
+    //helper for back tracing path 
+    _construct_path(current_x, current_z){
+        if(this.start_z === current_z && this.start_x === current_x){//already complete
+            this.path.reverse();
+            this.path.pop();//pop the extra starting grid at the end
+            //add one more step to reach the end 
+            let last_step = this.path[this.path.length-1];
+            let last_x = last_step[1];
+            let last_z = last_step[2];
+            if(last_x + 1 === this.end_x){//need to move east
+                this.path.push(['E', this.end_x, this.end_z]);
+            }else if(last_x - 1 === this.end_x){ //need to move west 
+                this.path.push(['W', this.end_x, this.end_z]);
+            }else if(last_z + 1 === this.end_z){ //need to move south
+                this.path.push(['S', this.end_x, this.end_z]);
+            }else if(last_z - 1 === this.end_z){ //need to move north 
+                this.path.push(['N', this.end_x, this.end_z]);
+            }
+            return; 
+        }
+        let parent = this.final_grid[current_z][current_x].parent
+        this.path.push(parent);
+        current_x = parent[1];
+        current_z = parent[2];
+        this._construct_path(current_x, current_z); 
+    }
+
+    single_step_greedy_best_first() {
+        if (this.min_heap_gbf.is_empty()) {
+            this.isPathExist = false;
+            this.isRunningGBF = false;
+        }
+        if(this.isFoundEnd){
+            this.isRunningGBF = false;
+        }
+        if (this.isPathExist) {
+            if(this.isPoping){ //only choose a new one after done exploring previous one 
+                this.exploring_grid_gbf = this.min_heap_gbf.pop();
+                this.isPoping = false;
+            }
+            let current_grid = this.exploring_grid_gbf; //select minimum-distance-from-end grid from heap 
+            let current_x = current_grid[1];
+            let current_z = current_grid[2];
+            if (this.final_grid[current_z][current_x].isEnd) {
+                //set the color of end cell when found, for now remain unchange  
+                this.final_grid[current_z][current_x].is_changing_color = false
+
+                this.isFoundEnd = true;
+                //back trace to construct a path
+                this._construct_path(current_x, current_z);
+            } else { //push all the possible move to min_heap_gbf
+                //try moving north
+                if (this.is_in_bound(current_x, current_z - 1)
+                    && !this.final_grid[current_z - 1][current_x].iswall
+                    && !this.final_grid[current_z - 1][current_x].isVisited) {//coord inbound and is not wall and is not visited 
+                    current_z--;
+                    this.final_grid[current_z][current_x].isVisited = true;
+                    this.final_grid[current_z][current_x].is_changing_color = true;
+                    this.final_grid[current_z][current_x].parent = current_grid.slice(0, 4); //set parent for back tracing path 
+                    this.min_heap_gbf.push(['N', current_x, current_z, this.get_distance_from_end(current_x, current_z)]);
+                    this.current_x = current_x;
+                    this.current_z = current_z;
+                }
+                //try moving south
+                else if (this.is_in_bound(current_x, current_z + 1)
+                    && !this.final_grid[current_z + 1][current_x].iswall
+                    && !this.final_grid[current_z + 1][current_x].isVisited) {//coord inbound and is not wall and is not visited 
+                    current_z++;
+                    this.final_grid[current_z][current_x].isVisited = true;
+                    this.final_grid[current_z][current_x].is_changing_color = true;
+                    this.final_grid[current_z][current_x].parent = current_grid.slice(0, 4);
+                    this.min_heap_gbf.push(['S', current_x, current_z, this.get_distance_from_end(current_x, current_z)]);
+                    this.current_x = current_x;
+                    this.current_z = current_z;
+                }
+                //try moving west
+                else if (this.is_in_bound(current_x - 1, current_z)
+                    && !this.final_grid[current_z][current_x - 1].iswall
+                    && !this.final_grid[current_z][current_x - 1].isVisited) {//coord inbound and is not wall and is not visited 
+                    current_x--;
+                    this.final_grid[current_z][current_x].isVisited = true;
+                    this.final_grid[current_z][current_x].is_changing_color = true;
+                    this.final_grid[current_z][current_x].parent = current_grid.slice(0, 4);
+                    this.min_heap_gbf.push(['W', current_x, current_z, this.get_distance_from_end(current_x, current_z)]);
+                    this.current_x = current_x;
+                    this.current_z = current_z;
+                }
+                //try moving east
+                else if (this.is_in_bound(current_x + 1, current_z)
+                    && !this.final_grid[current_z][current_x + 1].iswall
+                    && !this.final_grid[current_z][current_x + 1].isVisited) {//coord inbound and is not wall and is not visited 
+                    current_x++;
+                    this.final_grid[current_z][current_x].isVisited = true;
+                    this.final_grid[current_z][current_x].is_changing_color = true;
+                    this.final_grid[current_z][current_x].parent = current_grid.slice(0, 4);
+                    this.min_heap_gbf.push(['E', current_x, current_z, this.get_distance_from_end(current_x, current_z)]);
+                    this.current_x = current_x;
+                    this.current_z = current_z;
+                }else{// already finished explore the grid 
+                    this.isPoping = true;
+                    this.final_grid[current_z][current_x].isExplored = true; //mark the grid fully explored (only used for debugging rn can change to visual later)
+                }
+            }
+        }
+
+    }
+
+    is_running_alg(){
+        return this.isRunningDFS || this.isRunningGBF;
+    }
 
     single_step_trace_path() {
         //this.final_grid[this.start_z][this.start_x].isPlayer = false; //now player no longer stays here 
