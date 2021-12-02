@@ -306,8 +306,6 @@ export class Project extends Base_Scene {
         const x_block = this.pixel[1];
         const y_block = this.pixel[0];
 
-        console.log(this.board.end_x, this.board.end_z, x_block, y_block);
-
         // Highlighting block
         if (this.on_board(x_block, y_block) && !this.player_selected && !this.ball_selected) {
             if (this.hover_player(this.pixel[1], this.pixel[0])) {
@@ -392,6 +390,8 @@ export class Project extends Base_Scene {
         //draw player
         if (this.player_selected && this.on_board(this.pixel[1], this.pixel[0]) && !maze[this.pixel[0]][this.pixel[1]].iswall) {
             this.board.player.set_position(this.pixel[1], this.pixel[0]);
+            this.board.init_start_x = this.pixel[1];
+            this.board.init_start_z = this.pixel[0];
         } 
         
         this.board.discrete_move_player(dt);
