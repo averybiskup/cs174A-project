@@ -241,7 +241,7 @@ class Board {
     }
 
     set_sandbox() {
-        if (!false) {
+        if (!this.sandbox) {
             this.sandbox = true;    
 
             for (let i = 0; i < this.grid_height * 2; i++) {
