@@ -122,6 +122,9 @@ export class Project extends Base_Scene {
         this.ball_selected = false;
 
         this.wall_height = 0;
+        
+        this.timer_status = false;
+        this.timer = 0;
     }
 
     // Returns true or false if mouse is on valid square or not
@@ -253,6 +256,9 @@ export class Project extends Base_Scene {
         this.key_triggered_button("Follow", ['c'], () => this.camera_angle = 'follow' ); // Change camera to follow player
 
         this.key_triggered_button("Sandbox", ['p'], () => this.toggle_sandbox() ); // Change game mode to sand box
+
+        this.live_string(box => box.textContent = "Timer: " + Math.round(this.timer));
+        this.key_triggered_button("Reset and Start Timer", ['t'], () => this.reset_start_timer());
     }
 
     draw_board_object(context, program_state, model_transform, i, j) {
@@ -292,6 +298,11 @@ export class Project extends Base_Scene {
         }
     }
 
+    reset_start_timer() {
+        this.timer = 0;
+        this.timer_status = true;
+    }
+
     display(context, program_state) {
         super.display(context, program_state);
 
@@ -305,6 +316,11 @@ export class Project extends Base_Scene {
         //draw the maze contents according to board(see definition in board.js) (needs to be replaced later)
         let t = program_state.animation_time / 1000;
         let dt = program_state.animation_delta_time / 1000;
+
+        if (this.timer_status)
+        {
+            this.timer += dt;
+        }
 
         let model_transform = Mat4.identity();
 
@@ -384,7 +400,6 @@ export class Project extends Base_Scene {
             for(let j = 0; j < this.board.final_grid[0].length; j++){
                 this.draw_board_object(context, program_state, model_transform, i, j);
             }
-            
         }
 
         //run searching algorithm
@@ -426,9 +441,18 @@ export class Project extends Base_Scene {
         } 
         
         this.board.discrete_move_player(dt);
+
+        if (this.board.final_grid[this.board.player.grid_z][this.board.player.grid_x].isEnd)
+        {
+            this.timer_status = false;
+            this.particles_emitter.player_particle_emitter.add_particles(this.board.player.model_transform);
+        }
+
         model_transform = (this.board.player.model_transform).times(Mat4.rotation(this.board.player.point_to, 0, 1, 0))
                                                              .times(Mat4.scale(this.board.player.scale, this.board.player.scale, this.board.player.scale));
         this.shapes.player.draw(context, program_state, model_transform, this.materials.plane.override(this.board.current_player_color));
+
+
 
         //add particle trace behind player when moving 
         if(this.board.player.is_moving()){
