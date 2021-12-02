@@ -702,7 +702,7 @@ class Board {
         if(this.isFoundEnd){
             this.isRunningGBF = false;
         }
-        if (this.isPathExist) {
+        else if (this.isPathExist) {
             if(this.isPoping){ //only choose a new one after done exploring previous one 
                 this.exploring_grid_gbf = this.min_heap_gbf.pop();
                 this.isPoping = false;
