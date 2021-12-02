@@ -713,7 +713,8 @@ class Board {
             if (this.final_grid[current_z][current_x].isEnd) {
                 //set the color of end cell when found, for now remain unchange  
                 this.final_grid[current_z][current_x].is_changing_color = false
-
+                this.current_x = current_x;
+                this.current_z = current_z;
                 this.isFoundEnd = true;
                 //back trace to construct a path
                 this._construct_path(current_x, current_z);
