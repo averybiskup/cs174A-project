@@ -266,6 +266,20 @@ export class Project extends Base_Scene {
 
     }
 
+    draw_color_block(context, program_state, model_transform, i, j) {
+        
+        let maze = this.board.final_grid;
+        if (maze[i][j].iswall) { //draw wall
+                model_transform = get_model_translate_from_grid(i, j).times(Mat4.scale(0.8, 0.8, 0.8));
+                this.shapes.cube.draw(context, program_state, model_transform, this.materials.grey_picker_plastic.override({color: color(i/255, j/255, .1, 1.0)}));
+        } else if(maze[i][j].isShown){
+            model_transform = get_model_translate_from_grid(i, j);
+            let scale = maze[i][j].scale;
+            model_transform = model_transform.times(Mat4.scale(scale, 0.01, scale)).times(Mat4.translation(0, -100, 0));
+            this.shapes.cube.draw(context, program_state, model_transform, this.materials.grey_picker_plastic.override({color: color(i/255, j/255, .1, 1.0)}));
+        }
+    }
+
     display(context, program_state) {
         super.display(context, program_state);
 
@@ -284,18 +298,9 @@ export class Project extends Base_Scene {
 
         let maze = this.board.final_grid;
 
-        for(let i = 0; i < this.board.final_grid.length; i++){
-            for(let j = 0; j < this.board.final_grid[0].length; j++){
-                if (maze[i][j].iswall) { //draw wall
-                        model_transform = get_model_translate_from_grid(i, j).times(Mat4.scale(0.8, 0.8, 0.8));
-                        this.shapes.cube.draw(context, program_state, model_transform, this.materials.grey_picker_plastic.override({color: color(i/255, j/255, .1, 1.0)}));
-                }
-                else if(maze[i][j].isShown){
-                    model_transform = get_model_translate_from_grid(i, j);
-                    let scale = maze[i][j].scale;
-                    model_transform = model_transform.times(Mat4.scale(scale, 0.01, scale)).times(Mat4.translation(0, -100, 0));
-                    this.shapes.cube.draw(context, program_state, model_transform, this.materials.grey_picker_plastic.override({color: color(i/255, j/255, .1, 1.0)}));
-                }
+        for(let i = 0; i < this.current_y; i++){
+            for(let j = 0; j < this.current_x; j++){
+                this.draw_color_block(context, program_state, model_transform, i, j);
             }
         }
 
