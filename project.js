@@ -213,6 +213,14 @@ export class Project extends Base_Scene {
         }
     }
 
+    toggle_sandbox() {
+        if (this.board.sandbox) {
+            this.regenBoard();     
+        } else {
+            this.board.set_sandbox();    
+        }
+    }
+
     make_control_panel() {
 
         // Draw the scene's buttons, setup their actions and keyboard shortcuts, and monitor live measurements.
@@ -230,14 +238,16 @@ export class Project extends Base_Scene {
         this.key_triggered_button("Reset", ['m'], () => this.board.reset_board(false) ); //reset board, preserve maze, DO NOT preserve player location
         this.key_triggered_button("Pause", ['n'], () => this.board.reset_board(true) ); //pause all the algorithm, Preserve both maze and player location
 
-        this.key_triggered_button("Decrease x", ['<'], () => this.resetX(-2) ); //visualize dfs
-        this.key_triggered_button("Increase x", ['>'], () => this.resetX(2) ); //visualize dfs
-        this.key_triggered_button("Decrease y", ['-'], () => this.resetY(-2) ); //visualize dfs
-        this.key_triggered_button("Increase y", ['+'], () => this.resetY(2) ); //visualize dfs
+        this.key_triggered_button("Decrease x", ['<'], () => this.resetX(-2) ); // Decrease board in x direction
+        this.key_triggered_button("Increase x", ['>'], () => this.resetX(2) ); // Increase board in x direction
+        this.key_triggered_button("Decrease y", ['-'], () => this.resetY(-2) ); // Decrease board in y direction
+        this.key_triggered_button("Increase y", ['+'], () => this.resetY(2) ); // Increase board in y direction
 
-        this.key_triggered_button("Birds View", ['b'], () => this.camera_angle = 'bird' ); //visualize dfs
-        this.key_triggered_button("Side View", ['.'], () => this.camera_angle = 'side' ); //visualize dfs
-        this.key_triggered_button("Follow", ['c'], () => this.camera_angle = 'follow' ); //visualize dfs
+        this.key_triggered_button("Birds View", ['b'], () => this.camera_angle = 'bird' ); // Change camera position to birds eye
+        this.key_triggered_button("Side View", ['.'], () => this.camera_angle = 'side' ); // Change cmaera position to side view
+        this.key_triggered_button("Follow", ['c'], () => this.camera_angle = 'follow' ); // Change camera to follow player
+
+        this.key_triggered_button("Sandbox", ['p'], () => this.toggle_sandbox() ); // Change game mode to sand box
     }
 
     draw_board_object(context, program_state, model_transform, i, j) {

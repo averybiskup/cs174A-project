@@ -45,6 +45,8 @@ const INIT_SCALE = 0.32;
 const MAX_SCALE = 0.8;
 const DEFAULT_SCALE_RATE = 1.0;
 
+const SAND_BOX_FLOOR_COLOR = color(1.0, 1.0, 1.0, 1.0);
+
 
 class Cell {
     constructor(x, y) {
@@ -212,6 +214,8 @@ class Board {
         this.current_ball_color = color(1, 0.61, 0.549, 1.0);
         this.ball_color = color(1, 0.61, 0.549, 1.0);
         this.ball_highlight_color = color(0, 1.0, 0.5, 1.0);
+
+        this.sandbox = false;
     }
 
 
@@ -226,6 +230,25 @@ class Board {
 
     is_movable(x, z) {
         return this.is_in_bound(x, z) && (!this.final_grid[z][x].iswall);
+    }
+
+    set_sandbox() {
+        if (!false) {
+            this.sandbox = true;    
+
+            for (let i = 0; i < this.grid_height * 2; i++) {
+                for (let j = 0; j < this.grid_width * 2; j++) {
+                    this.final_grid[i][j].iswall = false;
+                    this.final_grid[i][j].r = 1.0;
+                    this.final_grid[i][j].g = 1.0;
+                    this.final_grid[i][j].b = 1.0;
+                }
+            }
+        } else {
+            console.log('test')
+            this.sandbox = false;    
+            this.reset_board(false);
+        }
     }
 
     // method for randomly shuffling an array
@@ -405,6 +428,11 @@ class Board {
             this.player.point_to = this.player.init_point_to;
             this.start_x = this.init_start_x;
             this.start_z = this.init_start_z;
+
+            // If we are in sandbox mode, we want to reset it too
+            if (this.sandbox) {
+                this.set_sandbox();    
+            }
         }
         this.player.model_transform = get_model_translate_from_grid(this.player.grid_z, this.player.grid_x);
         this.final_grid[this.start_z][this.start_x].isPlayer = true;
