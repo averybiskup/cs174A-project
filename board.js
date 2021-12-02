@@ -173,7 +173,8 @@ class Board {
     Based on: http://weblog.jamisbuck.org/2010/12/27/maze-generation-recursive-backtracking
     */
 
-    constructor(grid_width, grid_height) {
+    constructor(grid_width, grid_height, sandbox) {
+        this.sandbox = sandbox;
         this.grid_width = grid_width; //grid_width  
         this.grid_height = grid_height; //grid_height 
         this.start_x = 0;; //starting grid x coordinate 
@@ -214,8 +215,6 @@ class Board {
         this.current_ball_color = color(1, 0.61, 0.549, 1.0);
         this.ball_color = color(1, 0.61, 0.549, 1.0);
         this.ball_highlight_color = color(0, 1.0, 0.5, 1.0);
-
-        this.sandbox = false;
     }
 
 
@@ -245,7 +244,6 @@ class Board {
                 }
             }
         } else {
-            console.log('test')
             this.sandbox = false;    
             this.reset_board(false);
         }
@@ -380,6 +378,9 @@ class Board {
                 }
 
             }
+        }
+        if (this.sandbox) {
+            this.set_sandbox();    
         }
 
     }

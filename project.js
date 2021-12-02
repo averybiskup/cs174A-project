@@ -105,7 +105,7 @@ export class Project extends Base_Scene {
         // Generate a maze with size [board_width/2 x board_height/2]
         // Randomly place start and end point
         this.board = new Board(this.board_width/2, 
-                               this.board_height/2);
+                               this.board_height/2, false);
         this.particles_emitter = {
             player_particle_emitter: new Particles_Emitter(2, 0.28, 0.3, vec4(1, 1, 1, 1), 3, 1, 3),
         }
@@ -188,8 +188,8 @@ export class Project extends Base_Scene {
     }
 
     // Regenerating maze
-    regenBoard() {
-        this.board = new Board(this.board_width/2, this.board_height/2);    
+    regenBoard(sandbox=false) {
+        this.board = new Board(this.board_width/2, this.board_height/2, sandbox);
         this.current_x = 0;
         this.current_y = 0;
         this.drawing_board = true;
@@ -200,7 +200,7 @@ export class Project extends Base_Scene {
         if (this.board_width >= 5 && this.board_width <= 40) {
             this.board_width += value;
             this.board.grid_width += value;
-            this.regenBoard();
+            this.regenBoard(this.board.sandbox);
         }
     }
 
@@ -209,13 +209,13 @@ export class Project extends Base_Scene {
         if (this.board_height >= 5 && this.board_height <= 40) {
             this.board.grid_height += value;
             this.board_height += value;
-            this.regenBoard();
+            this.regenBoard(this.board.sandbox);
         }
     }
 
     toggle_sandbox() {
         if (this.board.sandbox) {
-            this.regenBoard();     
+            this.regenBoard(false);
         } else {
             this.board.set_sandbox();    
         }
