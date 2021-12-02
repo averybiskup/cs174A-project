@@ -15,7 +15,7 @@ const {
         this.point_to = point_to; //direction the player points to relative to South default 0 rad
         this.init_point_to = point_to; //initial point to   
         this.speed = speed; //default speed 2 units/second 
-        this.model_transform = get_model_translate_from_grid(player_z, player_x); //holds current model_transform of player
+        this.model_transform = get_model_translate_from_grid(this.grid_z, this.grid_x); //holds current model_transform of player
         //stores player's states. 
         //store total time player moving
         this.N_dt = 0; //store total time player moving N
@@ -69,6 +69,12 @@ const {
 
     is_moving(){
         return this.isMovingE || this.isMovingN || this.isMovingS || this.isMovingW;
+    }
+
+    set_position(x, y) {
+        this.grid_x = x;
+        this.grid_z = y;
+        this.model_transform = get_model_translate_from_grid(this.grid_z, this.grid_x); //holds current model_transform of player
     }
  }
 

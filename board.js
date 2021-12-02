@@ -203,6 +203,15 @@ class Board {
         this.path_next_x = this.start_x;
         this.path_next_z = this.start_z;
         this.isPathExist = true;
+
+        this.current_player_color = color(1, 0.61, 0.549, 1.0);
+        this.player_color = color(1, 0.61, 0.549, 1.0);
+        this.player_highlight_color = color(0, 1.0, 0.5, 1.0);
+        this.block_highlight_color = color(1.0, 0, 0, 1.0);
+
+        this.current_ball_color = color(1, 0.61, 0.549, 1.0);
+        this.ball_color = color(1, 0.61, 0.549, 1.0);
+        this.ball_highlight_color = color(0, 1.0, 0.5, 1.0);
     }
 
 
@@ -417,7 +426,7 @@ class Board {
         this.path_next_x = this.start_x;
         this.path_next_z = this.start_z;
         this.isPathExist = true;
-        
+
     }
 
     reset_grid(){
