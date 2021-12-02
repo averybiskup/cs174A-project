@@ -255,12 +255,18 @@ export class Project extends Base_Scene {
 
     draw_board_object(context, program_state, model_transform, i, j) {
         const maze = this.board.final_grid
-        const wall_color = color(1 - (0.5 * (this.wall_height + 0.2)), 1 - (0.5 * (this.wall_height + 0.2)), 1- (0.5 * (this.wall_height + 0.2)), 1.0)
+        let wall_color = color(1 - (0.5 * (this.wall_height + 0.2)), 1 - (0.5 * (this.wall_height + 0.2)), 1- (0.5 * (this.wall_height + 0.2)), 1.0)
+        if (this.drawing_board) {
+            wall_color = color(1 - (0.5 * (this.wall_height + 0.2)), 1 - (0.5 * (this.wall_height + 0.2)), 1- (0.5 * (this.wall_height + 0.2)), 1.0)
+        } else {
+            wall_color = maze[i][j].color;
+        }
+            
         if (maze[i][j].iswall) { //draw wall
             model_transform = get_model_translate_from_grid(i, j);
             let scale = maze[i][j].scale;
             model_transform = model_transform.times(Mat4.scale(scale, this.wall_height, scale));
-            this.shapes.cube.draw(context, program_state, model_transform, this.materials.grey_plastic.override({color: wall_color}));
+            this.shapes.cube.draw(context, program_state, model_transform, this.materials.grey_plastic.override({color: maze[i][j].color}));
         } else {
             model_transform = get_model_translate_from_grid(i, j);
             let scale = maze[i][j].scale;
@@ -325,13 +331,22 @@ export class Project extends Base_Scene {
         const x_block = this.pixel[1];
         const y_block = this.pixel[0];
 
+        // Drawing board
+        if (this.drawing_board === true) {
+            if (this.wall_height <= 0.8) {
+                this.wall_height += 0.05;
+            } else {
+                this.drawing_board = false;    
+            }
+        }
+
         // Highlighting block
         if (this.on_board(x_block, y_block) && !this.player_selected && !this.ball_selected) {
             if (this.hover_player(this.pixel[1], this.pixel[0])) {
                 this.board.current_player_color = this.board.player_highlight_color;    
 
             } else if (this.hover_end(x_block, y_block)) {
-                this.board.current_ball_color = this.board.ball_highlight_color;    
+                this.board.current_ball_color = this.board.ball_highlight_color;
 
             } else {
                 maze[this.pixel[0]][this.pixel[1]].color = this.board.block_highlight_color;
@@ -349,14 +364,6 @@ export class Project extends Base_Scene {
 
         this.draw_maze_boarder(context, program_state, this.board_width*2, this.board_height*2); //draw a 40 x 30 area on x-z plane
 
-        // Drawing board
-        if (this.drawing_board === true) {
-            if (this.wall_height <= 0.8) {
-                this.wall_height += 0.05;
-            } else {
-                this.drawing_board = false;    
-            }
-        }
 
         // Drawing ball
         
