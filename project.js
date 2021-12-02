@@ -120,6 +120,8 @@ export class Project extends Base_Scene {
 
         this.player_selected = false;
         this.ball_selected = false;
+
+        this.wall_height = 0;
     }
 
     // Returns true or false if mouse is on valid square or not
@@ -193,6 +195,7 @@ export class Project extends Base_Scene {
         this.current_x = 0;
         this.current_y = 0;
         this.drawing_board = true;
+        this.wall_height = 0;
     }
 
     // Resetting x size of board
@@ -252,11 +255,12 @@ export class Project extends Base_Scene {
 
     draw_board_object(context, program_state, model_transform, i, j) {
         const maze = this.board.final_grid
+        const wall_color = color(1 - (0.5 * (this.wall_height + 0.2)), 1 - (0.5 * (this.wall_height + 0.2)), 1- (0.5 * (this.wall_height + 0.2)), 1.0)
         if (maze[i][j].iswall) { //draw wall
             model_transform = get_model_translate_from_grid(i, j);
             let scale = maze[i][j].scale;
-            model_transform = model_transform.times(Mat4.scale(scale, scale, scale));
-            this.shapes.cube.draw(context, program_state, model_transform, this.materials.grey_plastic.override({color: maze[i][j].color}));
+            model_transform = model_transform.times(Mat4.scale(scale, this.wall_height, scale));
+            this.shapes.cube.draw(context, program_state, model_transform, this.materials.grey_plastic.override({color: wall_color}));
         } else {
             model_transform = get_model_translate_from_grid(i, j);
             let scale = maze[i][j].scale;
@@ -270,7 +274,7 @@ export class Project extends Base_Scene {
         
         let maze = this.board.final_grid;
         if (maze[i][j].iswall) { //draw wall
-                model_transform = get_model_translate_from_grid(i, j).times(Mat4.scale(0.8, 0.8, 0.8));
+                model_transform = get_model_translate_from_grid(i, j).times(Mat4.scale(0.8, this.wall_height, 0.8));
                 this.shapes.cube.draw(context, program_state, model_transform, this.materials.grey_picker_plastic.override({color: color(i/255, j/255, .1, 1.0)}));
         } else if(maze[i][j].isShown){
             model_transform = get_model_translate_from_grid(i, j);
@@ -298,8 +302,8 @@ export class Project extends Base_Scene {
 
         let maze = this.board.final_grid;
 
-        for(let i = 0; i < this.current_y; i++){
-            for(let j = 0; j < this.current_x; j++){
+        for(let i = 0; i < this.board.final_grid.length; i++){
+            for(let j = 0; j < this.board.final_grid[0].length; j++){
                 this.draw_color_block(context, program_state, model_transform, i, j);
             }
         }
@@ -347,13 +351,9 @@ export class Project extends Base_Scene {
 
         // Drawing board
         if (this.drawing_board === true) {
-            if (this.current_y < this.board.final_grid.length) {
-                this.current_y += 1;
-            } 
-            if (this.current_x < this.board.final_grid[0].length) {
-                this.current_x += 1;
-            } 
-            if (this.current_x === this.board.final_grid[0].length && this.current_y === this.board.final_grid.length) {
+            if (this.wall_height <= 0.8) {
+                this.wall_height += 0.05;
+            } else {
                 this.drawing_board = false;    
             }
         }
@@ -371,8 +371,8 @@ export class Project extends Base_Scene {
         this.shapes.sphere.draw(context, program_state, model_transform, this.materials.grey_plastic.override({color: this.board.current_ball_color}));
 
         // Drawing each cube
-        for (let i = 0; i < this.current_y; i++) {
-            for (let j = 0; j < this.current_x; j++) {
+        for(let i = 0; i < this.board.final_grid.length; i++){
+            for(let j = 0; j < this.board.final_grid[0].length; j++){
                 this.draw_board_object(context, program_state, model_transform, i, j);
             }
             
