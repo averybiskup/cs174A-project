@@ -117,8 +117,30 @@ export class Project extends Base_Scene {
 
         this.listeners_added = false;
         this.pixel = new Uint8Array(4);
+
+        this.player_selected = false;
+        this.ball_selected = false;
     }
 
+    // Returns true or false if mouse is on valid square or not
+    on_board(x, y) {
+        return (x >= 0 
+            && x <= this.board_width - 1
+            && y <= this.board_height - 1
+            && y >= 0);
+    }
+
+    hover_player(x, y) {
+        return (x === this.board.player.grid_x 
+                && y === this.board.player.grid_z);
+    }
+
+    hover_end(x, y) {
+        return (x === this.board.end_x 
+                && y === this.board.end_z);
+    }
+
+    // Adds event listeners to mouse inputs
     add_listeners(canvas) {
         this.listeners_added = true;
         
@@ -128,17 +150,31 @@ export class Project extends Base_Scene {
             this.mouseX = e.clientX;
             this.mouseY = e.clientY;
 
+            // Unselecting  / selecting player
+            if (this.player_selected) {
+                this.player_selected = false;    
+                this.board.reset_board(true)
+            } else if (this.hover_player(this.pixel[1], this.pixel[0])) {
+                this.player_selected = true;
+            } else if (this.ball_selected) {
+                this.ball_selected = false;
+                this.board.reset_board(true);
+                this.board.final_grid[this.pixel[0]][this.pixel[1]].isEnd = true;
+            } else if (this.hover_end(this.pixel[1], this.pixel[0])) {
+                this.ball_selected = true;
+                this.board.final_grid[this.pixel[0]][this.pixel[1]].isEnd = false;
+            }
+
         });
 
         canvas.addEventListener("mouseup", e => {
             e.preventDefault();
 
-            if (this.pixel[0] >= 0 
-                && this.pixel[0] <= this.board_width
-                && this.pixel[1] >= 0
-                && this.pixel[1] <= this.board_width) {
-                
-                console.log(this.pixel)
+            const x = this.pixel[1];
+            const y = this.pixel[0];
+
+            // Checking if mouse at valid location
+            if (this.on_board(x, y) && !this.hover_player(x, y) && !this.hover_end(x, y)) {
                 this.board.toggle_grid_wall(this.pixel[0], this.pixel[1]);
             }
         });
@@ -211,20 +247,13 @@ export class Project extends Base_Scene {
             let scale = maze[i][j].scale;
             model_transform = model_transform.times(Mat4.scale(scale, scale, scale));
             this.shapes.cube.draw(context, program_state, model_transform, this.materials.grey_plastic.override({color: maze[i][j].color}));
-        }
-        else {
+        } else {
             model_transform = get_model_translate_from_grid(i, j);
             let scale = maze[i][j].scale;
             model_transform = model_transform.times(Mat4.scale(scale, 0.01, scale)).times(Mat4.translation(0, -100, 0));
             this.shapes.cube.draw(context, program_state, model_transform, this.materials.white_plastic.override({color: maze[i][j].color}));
         }
 
-        if(maze[i][j].isEnd) { //draw end 
-            model_transform = get_model_translate_from_grid(i, j);
-            let scale = maze[i][j].scale;
-            model_transform = model_transform.times(Mat4.scale(scale, scale, scale));
-            this.shapes.sphere.draw(context, program_state, model_transform, this.materials.grey_plastic);
-        }
     }
 
     display(context, program_state) {
@@ -251,7 +280,7 @@ export class Project extends Base_Scene {
                         model_transform = get_model_translate_from_grid(i, j).times(Mat4.scale(0.8, 0.8, 0.8));
                         this.shapes.cube.draw(context, program_state, model_transform, this.materials.grey_picker_plastic.override({color: color(i/255, j/255, .1, 1.0)}));
                 }
-                else if(!maze[i][j].isPlayer && !maze[i][j].isEnd && maze[i][j].isShown){
+                else if(maze[i][j].isShown){
                     model_transform = get_model_translate_from_grid(i, j);
                     let scale = maze[i][j].scale;
                     model_transform = model_transform.times(Mat4.scale(scale, 0.01, scale)).times(Mat4.translation(0, -100, 0));
@@ -262,6 +291,7 @@ export class Project extends Base_Scene {
 
         this.draw_maze_ground(context, program_state);
 
+        // Calculating color at mouse position
         const rect = canvas.getBoundingClientRect();
 
         var x = this.mouseX;
@@ -273,8 +303,31 @@ export class Project extends Base_Scene {
 
         gl.clear(gl.DEPTH_BUFFER_BIT);
 
-        if (this.pixel[1] >= 0 && this.pixel[1] <= maze.length && this.pixel[0] >= 0 && this.pixel[0] <= maze.length) {
-            maze[this.pixel[0]][this.pixel[1]].color = color(1.0, 0, 0, 1.0);
+        const x_block = this.pixel[1];
+        const y_block = this.pixel[0];
+
+        console.log(this.board.end_x, this.board.end_z, x_block, y_block);
+
+        // Highlighting block
+        if (this.on_board(x_block, y_block) && !this.player_selected && !this.ball_selected) {
+            if (this.hover_player(this.pixel[1], this.pixel[0])) {
+                this.board.current_player_color = this.board.player_highlight_color;    
+
+            } else if (this.hover_end(x_block, y_block)) {
+                this.board.current_ball_color = this.board.ball_highlight_color;    
+
+            } else {
+                maze[this.pixel[0]][this.pixel[1]].color = this.board.block_highlight_color;
+                this.board.current_player_color = this.board.player_color;
+                this.board.current_ball_color = this.board.ball_color;
+            }
+        } else {
+            if (!this.player_selected) {
+                this.board.current_player_color = this.board.player_color;
+            }
+            if (!this.ball_selected) {
+                this.board.current_ball_color = this.board.ball_color;
+            }
         }
 
         this.draw_maze_boarder(context, program_state, this.board_width*2, this.board_height*2); //draw a 40 x 30 area on x-z plane
@@ -291,6 +344,18 @@ export class Project extends Base_Scene {
                 this.drawing_board = false;    
             }
         }
+
+        // Drawing ball
+        
+        if (this.ball_selected && this.on_board(x_block, y_block) && !maze[y_block][x_block].iswall) {
+            this.board.end_x = x_block;
+            this.board.end_z = y_block;
+        } 
+
+        model_transform = get_model_translate_from_grid(this.board.end_z, this.board.end_x);
+        let scale = maze[this.board.end_z][this.board.end_x].scale;
+        model_transform = model_transform.times(Mat4.scale(scale, scale, scale));
+        this.shapes.sphere.draw(context, program_state, model_transform, this.materials.grey_plastic.override({color: this.board.current_ball_color}));
 
         // Drawing each cube
         for (let i = 0; i < this.current_y; i++) {
@@ -323,11 +388,17 @@ export class Project extends Base_Scene {
             this.board.path_index++;
         }
         this.board.update_grid_appearance(dt);
+
         //draw player
+        if (this.player_selected && this.on_board(this.pixel[1], this.pixel[0]) && !maze[this.pixel[0]][this.pixel[1]].iswall) {
+            this.board.player.set_position(this.pixel[1], this.pixel[0]);
+        } 
+        
         this.board.discrete_move_player(dt);
         model_transform = (this.board.player.model_transform).times(Mat4.rotation(this.board.player.point_to, 0, 1, 0))
                                                              .times(Mat4.scale(this.board.player.scale, this.board.player.scale, this.board.player.scale));
-        this.shapes.player.draw(context, program_state, model_transform, this.materials.plane);
+        this.shapes.player.draw(context, program_state, model_transform, this.materials.plane.override(this.board.current_player_color));
+
         //add particle trace behind player when moving 
         if(this.board.player.is_moving()){
             //offset particle emitter behind player
@@ -344,7 +415,7 @@ export class Project extends Base_Scene {
             }
             //add more particles 
             this.particles_emitter.player_particle_emitter.add_particles(initial_model_transform);
-        }
+        } 
         if(!this.particles_emitter.player_particle_emitter.is_empty()){
             this.particles_emitter.player_particle_emitter.update_particles(program_state);
             this.particles_emitter.player_particle_emitter.render(context, program_state);
