@@ -471,6 +471,19 @@ class Board {
 
     }
 
+    clear_wall(){
+        for (let i = 0; i < this.grid_height * 2; i++) {
+            for (let j = 0; j < this.grid_width * 2; j++) {
+                if(this.final_grid[i][j].iswall){
+                    this.final_grid[i][j].iswall = false;
+                    this.final_grid[i][j].r = EMPTY_SPACE_COLOR_R;
+                    this.final_grid[i][j].g = EMPTY_SPACE_COLOR_G;
+                    this.final_grid[i][j].b = EMPTY_SPACE_COLOR_B;
+                }
+            }
+        }
+    }
+
     reset_grid(){
         for (let i = 0; i < this.grid_height * 2; i++) {
             for (let j = 0; j < this.grid_width * 2; j++) {
