@@ -243,15 +243,7 @@ class Board {
     set_sandbox() {
         if (!this.sandbox) {
             this.sandbox = true;    
-
-            for (let i = 0; i < this.grid_height * 2; i++) {
-                for (let j = 0; j < this.grid_width * 2; j++) {
-                    this.final_grid[i][j].iswall = false;
-                    this.final_grid[i][j].r = 1.0;
-                    this.final_grid[i][j].g = 1.0;
-                    this.final_grid[i][j].b = 1.0;
-                }
-            }
+            this.clear_wall();
         } else {
             this.sandbox = false;    
             this.reset_board(false);
