@@ -274,7 +274,6 @@ export class Project extends Base_Scene {
         this.new_line();
         this.new_line();
 
-        this.key_triggered_button("Regenerate", ['z'], () => this.regenBoard() ); //random regeneration of board
         this.key_triggered_button("Sandbox", ['x'], () => this.toggle_sandbox() ); // Change game mode to sand box
     }
 
