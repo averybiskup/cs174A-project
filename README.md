@@ -3,7 +3,7 @@
 ![image](./docs/gbf_example.png)
 
 
-This project visualizes how different path finding algorithms find the path from one point to another, using `tiny graphics` libarary.
+This project visualizes how different path finding algorithms find the path from one point to another, using `tiny graphics` library.
 
 Currently, we have two path finding algorithms implemented\
 * Depth first search (DFS)
