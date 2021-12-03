@@ -269,8 +269,8 @@ export class Project extends Base_Scene {
 
         this.key_triggered_button("Decrease x", [','], () => this.resetX(-2) ); // Decrease board in x direction
         this.key_triggered_button("Increase x", ['.'], () => this.resetX(2) ); // Increase board in x direction
-        this.key_triggered_button("Decrease y", ['\''], () => this.resetY(-2) ); // Decrease board in y direction
-        this.key_triggered_button("Increase y", ['/'], () => this.resetY(2) ); // Increase board in y direction
+        this.key_triggered_button("Decrease y", ['/'], () => this.resetY(-2) ); // Decrease board in y direction
+        this.key_triggered_button("Increase y", ['\''], () => this.resetY(2) ); // Increase board in y direction
         this.new_line();
         this.new_line();
 
