@@ -236,29 +236,45 @@ export class Project extends Base_Scene {
         this.key_triggered_button("Move 1 grid S", ["k"], () => this.board.player.isMovingS = true);
         this.key_triggered_button("Move 1 grid W", ["j"], () => this.board.player.isMovingW = true);
         this.key_triggered_button("Move 1 grid E", ["l"], () => this.board.player.isMovingE = true);
+        this.new_line();
+        this.new_line();
+
+        this.live_string(box => box.textContent = "Timer: " + Math.round(this.timer));
+        this.new_line();
+        this.key_triggered_button("Reset and Start Timer", ['t'], () => this.reset_start_timer());
+        this.new_line();
+        this.new_line();
 
         this.key_triggered_button("Run DFS", ['y'], () => this.board.isRunningDFS = this.board.is_running_alg()?false:true); //visualize dfs, if other alg is running it won't work 
         this.key_triggered_button("Run greedy best first", ['u'], () => this.board.isRunningGBF = this.board.is_running_alg()?false:true); //visualize gbf, if other alg is running it won't work 
-        
+        this.new_line();
+        this.key_triggered_button("Pause", ['n'], () => this.board.reset_board(true) ); //pause all the algorithm, Preserve both maze and player location
+        this.new_line();
+        this.new_line();
+
         // Restart algorithm
         this.key_triggered_button("Regenerate", ['x'], () => this.regenBoard() ); //random regeneration of board
         this.key_triggered_button("Reset", ['m'], () => this.board.reset_board(false) ); //reset board, preserve maze, DO NOT preserve player location
         this.key_triggered_button("Pause", ['n'], () => this.board.reset_board(true) ); //pause all the algorithm, Preserve both maze and player location
         this.key_triggered_button("Clear wall", ['0'], () => this.board.clear_wall()); //clear all the walls, might be buggy
+        this.new_line();
+        this.new_line();
+
+        this.key_triggered_button("Birds View", ['b'], () => this.camera_angle = 'bird' ); // Change camera position to birds eye
+        this.key_triggered_button("Side View", ['.'], () => this.camera_angle = 'side' ); // Change cmaera position to side view
+        this.key_triggered_button("Follow", ['c'], () => this.camera_angle = 'follow' ); // Change camera to follow player
+        this.new_line();
+        this.new_line();
 
         this.key_triggered_button("Decrease x", ['<'], () => this.resetX(-2) ); // Decrease board in x direction
         this.key_triggered_button("Increase x", ['>'], () => this.resetX(2) ); // Increase board in x direction
         this.key_triggered_button("Decrease y", ['-'], () => this.resetY(-2) ); // Decrease board in y direction
         this.key_triggered_button("Increase y", ['+'], () => this.resetY(2) ); // Increase board in y direction
+        this.new_line();
+        this.new_line();
 
-        this.key_triggered_button("Birds View", ['b'], () => this.camera_angle = 'bird' ); // Change camera position to birds eye
-        this.key_triggered_button("Side View", ['.'], () => this.camera_angle = 'side' ); // Change cmaera position to side view
-        this.key_triggered_button("Follow", ['c'], () => this.camera_angle = 'follow' ); // Change camera to follow player
-
+        this.key_triggered_button("Regenerate", ['x'], () => this.regenBoard() ); //random regeneration of board
         this.key_triggered_button("Sandbox", ['p'], () => this.toggle_sandbox() ); // Change game mode to sand box
-
-        this.live_string(box => box.textContent = "Timer: " + Math.round(this.timer));
-        this.key_triggered_button("Reset and Start Timer", ['t'], () => this.reset_start_timer());
     }
 
     draw_board_object(context, program_state, model_transform, i, j) {
