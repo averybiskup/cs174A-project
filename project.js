@@ -361,7 +361,7 @@ export class Project extends Base_Scene {
 
         // Drawing ball
         
-        if (this.ball_selected && this.on_board(x_block, y_block) && !maze[y_block][x_block].iswall) {
+        if (this.ball_selected && this.on_board(x_block, y_block) && !maze[y_block][x_block].iswall && this.on_board(this.pixel[1], this.pixel[0]) {
             this.board.end_x = x_block;
             this.board.end_z = y_block;
         } 
