@@ -203,17 +203,17 @@ export class Project extends Base_Scene {
 
     // Resetting x size of board
     resetX(value) {
-        if (this.board_width >= 5 && this.board_width <= 40) {
+        if (this.board_width + value > 2 && this.board_width + value < 41) {
             this.board_width += value;
-            this.board.grid_width += value;
+            this.board.grid_width += value/2;
             this.regenBoard(this.board.sandbox);
         }
     }
 
     // Resetting y size of board
     resetY(value) {
-        if (this.board_height >= 5 && this.board_height <= 40) {
-            this.board.grid_height += value;
+        if (this.board_height + value > 2 && this.board_height + value < 41) {
+            this.board.grid_height += value/2;
             this.board_height += value;
             this.regenBoard(this.board.sandbox);
         }
