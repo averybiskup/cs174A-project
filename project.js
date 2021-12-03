@@ -161,13 +161,13 @@ export class Project extends Base_Scene {
                 this.board.reset_board(true)
             } else if (this.hover_player(this.pixel[1], this.pixel[0])) {
                 this.player_selected = true;
-            } else if (this.ball_selected) {
+            } else if (this.ball_selected && this.on_board(this.pixel[1], this.pixel[0])) {
                 this.ball_selected = false;
                 this.board.reset_board(true);
-                this.board.final_grid[this.pixel[1]][this.pixel[0]].isEnd = true;
+                this.board.final_grid[this.pixel[0]][this.pixel[1]].isEnd = true;
             } else if (this.hover_end(this.pixel[1], this.pixel[0])) {
                 this.ball_selected = true;
-                this.board.final_grid[this.pixel[0]][this.pixel[1]].isEnd = false;
+                this.board.final_grid[this.pixel[1]][this.pixel[0]].isEnd = false;
             }
 
         });
