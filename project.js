@@ -107,7 +107,7 @@ export class Project extends Base_Scene {
         this.board = new Board(this.board_width/2, 
                                this.board_height/2, false);
         this.particles_emitter = {
-            player_particle_emitter: new Particles_Emitter(2, 0.28, 0.3, vec4(1, 0.61, 0.549, 1.0), 3, 1, 3),
+            player_particle_emitter: new Particles_Emitter(2, 0.28, 0.3, vec4(185/255, 255/255, 255/255, 1.0), 3, 1, 3),
         }
         this.time_counter = 0;
         this.drawing_board = true;
