@@ -164,7 +164,7 @@ export class Project extends Base_Scene {
             } else if (this.ball_selected) {
                 this.ball_selected = false;
                 this.board.reset_board(true);
-                this.board.final_grid[this.pixel[0]][this.pixel[1]].isEnd = true;
+                this.board.final_grid[this.pixel[1]][this.pixel[0]].isEnd = true;
             } else if (this.hover_end(this.pixel[1], this.pixel[0])) {
                 this.ball_selected = true;
                 this.board.final_grid[this.pixel[0]][this.pixel[1]].isEnd = false;
