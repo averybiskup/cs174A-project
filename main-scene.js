@@ -1,6 +1,4 @@
 import {defs, tiny} from './examples/common.js';
-
-import {Transforms_Sandbox} from "./examples/transforms-sandbox.js"
 import {Project} from "./project.js"
 // Pull these names into this module's scope for convenience:
 const {
@@ -18,8 +16,7 @@ const {
 
 const Minimal_Webgl_Demo = defs.Minimal_Webgl_Demo;
 
-Object.assign(defs,
-            {Transforms_Sandbox}, {Project});
+Object.assign(defs, {Project});
 
 // ******************** End extra step
 
