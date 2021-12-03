@@ -107,7 +107,7 @@ export class Project extends Base_Scene {
         this.board = new Board(this.board_width/2, 
                                this.board_height/2, false);
         this.particles_emitter = {
-            player_particle_emitter: new Particles_Emitter(2, 0.28, 0.3, vec4(1, 1, 1, 1), 3, 1, 3),
+            player_particle_emitter: new Particles_Emitter(2, 0.28, 0.3, vec4(185/255, 255/255, 255/255, 1.0), 3, 1, 3),
         }
         this.time_counter = 0;
         this.drawing_board = true;
@@ -120,6 +120,11 @@ export class Project extends Base_Scene {
 
         this.player_selected = false;
         this.ball_selected = false;
+
+        this.wall_height = 0;
+        
+        this.timer_status = false;
+        this.timer = 0;
     }
 
     // Returns true or false if mouse is on valid square or not
@@ -193,6 +198,7 @@ export class Project extends Base_Scene {
         this.current_x = 0;
         this.current_y = 0;
         this.drawing_board = true;
+        this.wall_height = 0;
     }
 
     // Resetting x size of board
@@ -230,33 +236,60 @@ export class Project extends Base_Scene {
         this.key_triggered_button("Move 1 grid S", ["k"], () => this.board.player.isMovingS = true);
         this.key_triggered_button("Move 1 grid W", ["j"], () => this.board.player.isMovingW = true);
         this.key_triggered_button("Move 1 grid E", ["l"], () => this.board.player.isMovingE = true);
+        this.new_line();
+        this.new_line();
+
+        this.live_string(box => box.textContent = "Timer: " + Math.round(this.timer));
+        this.new_line();
+        this.key_triggered_button("Reset and Start Timer", ['t'], () => this.reset_start_timer());
+        this.new_line();
+        this.new_line();
 
         this.key_triggered_button("Run DFS", ['y'], () => this.board.isRunningDFS = this.board.is_running_alg()?false:true); //visualize dfs, if other alg is running it won't work 
         this.key_triggered_button("Run greedy best first", ['u'], () => this.board.isRunningGBF = this.board.is_running_alg()?false:true); //visualize gbf, if other alg is running it won't work 
-        
+        this.new_line();
+        this.key_triggered_button("Pause", ['n'], () => this.board.reset_board(true) ); //pause all the algorithm, Preserve both maze and player location
+        this.new_line();
+        this.new_line();
+
         // Restart algorithm
         this.key_triggered_button("Regenerate", ['x'], () => this.regenBoard() ); //random regeneration of board
         this.key_triggered_button("Reset", ['m'], () => this.board.reset_board(false) ); //reset board, preserve maze, DO NOT preserve player location
         this.key_triggered_button("Pause", ['n'], () => this.board.reset_board(true) ); //pause all the algorithm, Preserve both maze and player location
+        this.key_triggered_button("Clear wall", ['0'], () => this.board.clear_wall()); //clear all the walls, might be buggy
+        this.new_line();
+        this.new_line();
+
+        this.key_triggered_button("Birds View", ['b'], () => this.camera_angle = 'bird' ); // Change camera position to birds eye
+        this.key_triggered_button("Side View", ['.'], () => this.camera_angle = 'side' ); // Change cmaera position to side view
+        this.key_triggered_button("Follow", ['c'], () => this.camera_angle = 'follow' ); // Change camera to follow player
+        this.new_line();
+        this.new_line();
 
         this.key_triggered_button("Decrease x", ['<'], () => this.resetX(-2) ); // Decrease board in x direction
         this.key_triggered_button("Increase x", ['>'], () => this.resetX(2) ); // Increase board in x direction
         this.key_triggered_button("Decrease y", ['-'], () => this.resetY(-2) ); // Decrease board in y direction
         this.key_triggered_button("Increase y", ['+'], () => this.resetY(2) ); // Increase board in y direction
+        this.new_line();
+        this.new_line();
 
-        this.key_triggered_button("Birds View", ['b'], () => this.camera_angle = 'bird' ); // Change camera position to birds eye
-        this.key_triggered_button("Side View", ['.'], () => this.camera_angle = 'side' ); // Change cmaera position to side view
-        this.key_triggered_button("Follow", ['c'], () => this.camera_angle = 'follow' ); // Change camera to follow player
-
+        this.key_triggered_button("Regenerate", ['x'], () => this.regenBoard() ); //random regeneration of board
         this.key_triggered_button("Sandbox", ['p'], () => this.toggle_sandbox() ); // Change game mode to sand box
     }
 
     draw_board_object(context, program_state, model_transform, i, j) {
         const maze = this.board.final_grid
+        let wall_color = color(1 - (0.5 * (this.wall_height + 0.2)), 1 - (0.5 * (this.wall_height + 0.2)), 1- (0.5 * (this.wall_height + 0.2)), 1.0)
+        if (this.drawing_board) {
+            wall_color = color(1 - (0.5 * (this.wall_height + 0.2)), 1 - (0.5 * (this.wall_height + 0.2)), 1- (0.5 * (this.wall_height + 0.2)), 1.0)
+        } else {
+            wall_color = maze[i][j].color;
+        }
+            
         if (maze[i][j].iswall) { //draw wall
             model_transform = get_model_translate_from_grid(i, j);
             let scale = maze[i][j].scale;
-            model_transform = model_transform.times(Mat4.scale(scale, scale, scale));
+            model_transform = model_transform.times(Mat4.scale(scale, this.wall_height, scale));
             this.shapes.cube.draw(context, program_state, model_transform, this.materials.grey_plastic.override({color: maze[i][j].color}));
         } else {
             model_transform = get_model_translate_from_grid(i, j);
@@ -271,7 +304,7 @@ export class Project extends Base_Scene {
         
         let maze = this.board.final_grid;
         if (maze[i][j].iswall) { //draw wall
-                model_transform = get_model_translate_from_grid(i, j).times(Mat4.scale(0.8, 0.8, 0.8));
+                model_transform = get_model_translate_from_grid(i, j).times(Mat4.scale(0.8, this.wall_height, 0.8));
                 this.shapes.cube.draw(context, program_state, model_transform, this.materials.grey_picker_plastic.override({color: color(i/255, j/255, .1, 1.0)}));
         } else if(maze[i][j].isShown){
             model_transform = get_model_translate_from_grid(i, j);
@@ -279,6 +312,11 @@ export class Project extends Base_Scene {
             model_transform = model_transform.times(Mat4.scale(scale, 0.01, scale)).times(Mat4.translation(0, -100, 0));
             this.shapes.cube.draw(context, program_state, model_transform, this.materials.grey_picker_plastic.override({color: color(i/255, j/255, .1, 1.0)}));
         }
+    }
+
+    reset_start_timer() {
+        this.timer = 0;
+        this.timer_status = true;
     }
 
     display(context, program_state) {
@@ -295,12 +333,17 @@ export class Project extends Base_Scene {
         let t = program_state.animation_time / 1000;
         let dt = program_state.animation_delta_time / 1000;
 
+        if (this.timer_status)
+        {
+            this.timer += dt;
+        }
+
         let model_transform = Mat4.identity();
 
         let maze = this.board.final_grid;
 
-        for(let i = 0; i < this.current_y; i++){
-            for(let j = 0; j < this.current_x; j++){
+        for(let i = 0; i < this.board.final_grid.length; i++){
+            for(let j = 0; j < this.board.final_grid[0].length; j++){
                 this.draw_color_block(context, program_state, model_transform, i, j);
             }
         }
@@ -322,13 +365,22 @@ export class Project extends Base_Scene {
         const x_block = this.pixel[1];
         const y_block = this.pixel[0];
 
+        // Drawing board
+        if (this.drawing_board === true) {
+            if (this.wall_height <= 0.8) {
+                this.wall_height += 0.05;
+            } else {
+                this.drawing_board = false;    
+            }
+        }
+
         // Highlighting block
         if (this.on_board(x_block, y_block) && !this.player_selected && !this.ball_selected) {
             if (this.hover_player(this.pixel[1], this.pixel[0])) {
                 this.board.current_player_color = this.board.player_highlight_color;    
 
             } else if (this.hover_end(x_block, y_block)) {
-                this.board.current_ball_color = this.board.ball_highlight_color;    
+                this.board.current_ball_color = this.board.ball_highlight_color;
 
             } else {
                 maze[this.pixel[0]][this.pixel[1]].color = this.board.block_highlight_color;
@@ -346,18 +398,6 @@ export class Project extends Base_Scene {
 
         this.draw_maze_boarder(context, program_state, this.board_width*2, this.board_height*2); //draw a 40 x 30 area on x-z plane
 
-        // Drawing board
-        if (this.drawing_board === true) {
-            if (this.current_y < this.board.final_grid.length) {
-                this.current_y += 1;
-            } 
-            if (this.current_x < this.board.final_grid[0].length) {
-                this.current_x += 1;
-            } 
-            if (this.current_x === this.board.final_grid[0].length && this.current_y === this.board.final_grid.length) {
-                this.drawing_board = false;    
-            }
-        }
 
         // Drawing ball
         
@@ -372,11 +412,10 @@ export class Project extends Base_Scene {
         this.shapes.sphere.draw(context, program_state, model_transform, this.materials.grey_plastic.override({color: this.board.current_ball_color}));
 
         // Drawing each cube
-        for (let i = 0; i < this.current_y; i++) {
-            for (let j = 0; j < this.current_x; j++) {
+        for(let i = 0; i < this.board.final_grid.length; i++){
+            for(let j = 0; j < this.board.final_grid[0].length; j++){
                 this.draw_board_object(context, program_state, model_transform, i, j);
             }
-            
         }
 
         //run searching algorithm
@@ -418,9 +457,18 @@ export class Project extends Base_Scene {
         } 
         
         this.board.discrete_move_player(dt);
+
+        if (this.board.final_grid[this.board.player.grid_z][this.board.player.grid_x].isEnd)
+        {
+            this.timer_status = false;
+            this.particles_emitter.player_particle_emitter.add_particles(this.board.player.model_transform);
+        }
+
         model_transform = (this.board.player.model_transform).times(Mat4.rotation(this.board.player.point_to, 0, 1, 0))
                                                              .times(Mat4.scale(this.board.player.scale, this.board.player.scale, this.board.player.scale));
         this.shapes.player.draw(context, program_state, model_transform, this.materials.plane.override(this.board.current_player_color));
+
+
 
         //add particle trace behind player when moving 
         if(this.board.player.is_moving()){

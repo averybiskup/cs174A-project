@@ -243,15 +243,7 @@ class Board {
     set_sandbox() {
         if (!this.sandbox) {
             this.sandbox = true;    
-
-            for (let i = 0; i < this.grid_height * 2; i++) {
-                for (let j = 0; j < this.grid_width * 2; j++) {
-                    this.final_grid[i][j].iswall = false;
-                    this.final_grid[i][j].r = 1.0;
-                    this.final_grid[i][j].g = 1.0;
-                    this.final_grid[i][j].b = 1.0;
-                }
-            }
+            this.clear_wall();
         } else {
             this.sandbox = false;    
             this.reset_board(false);
@@ -469,6 +461,19 @@ class Board {
         this.path_next_z = this.start_z;
         this.isPathExist = true;
 
+    }
+
+    clear_wall(){
+        for (let i = 0; i < this.grid_height * 2; i++) {
+            for (let j = 0; j < this.grid_width * 2; j++) {
+                if(this.final_grid[i][j].iswall){
+                    this.final_grid[i][j].iswall = false;
+                    this.final_grid[i][j].r = EMPTY_SPACE_COLOR_R;
+                    this.final_grid[i][j].g = EMPTY_SPACE_COLOR_G;
+                    this.final_grid[i][j].b = EMPTY_SPACE_COLOR_B;
+                }
+            }
+        }
     }
 
     reset_grid(){
@@ -713,7 +718,8 @@ class Board {
             if (this.final_grid[current_z][current_x].isEnd) {
                 //set the color of end cell when found, for now remain unchange  
                 this.final_grid[current_z][current_x].is_changing_color = false
-
+                this.current_x = current_x;
+                this.current_z = current_z;
                 this.isFoundEnd = true;
                 //back trace to construct a path
                 this._construct_path(current_x, current_z);
