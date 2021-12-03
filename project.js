@@ -274,7 +274,7 @@ export class Project extends Base_Scene {
         this.new_line();
         this.new_line();
 
-        this.key_triggered_button("Sandbox", ['x'], () => this.toggle_sandbox() ); // Change game mode to sand box
+        this.key_triggered_button("Sandbox", ['z'], () => this.toggle_sandbox() ); // Change game mode to sand box
     }
 
     draw_board_object(context, program_state, model_transform, i, j) {
