@@ -3,7 +3,7 @@
 ![image](./docs/gbf_example.png)
 
 
-This project visualize how different path finding algorithm find the path from the starting point to end point, using `tiny graphics` libarary.
+This project visualizes how different path finding algorithms find the path from one point to another, using `tiny graphics` libarary.
 
 Currently, we have two path finding algorithms implemented\
 * Depth first search (DFS)
@@ -21,7 +21,7 @@ It will be running at `localhost:8000`
 # How to use 
 ![image](./docs/control_panel.png)
 
-Beside all the button in the control panel, you can hover your mouse pointer to change starting and ending point (represented by a pointer and a ball respectively). You can also toggle walls by clicking on the highlighted grid.
+Besides all the buttons in the control panel, you can use your mouse pointer to change starting and ending point (represented by a pointer and a ball respectively): single click to select, then single click again to place. You can also toggle walls by clicking on the highlighted grid.
 
 
 
